@@ -656,6 +656,8 @@ def mapTypeName(inputName):
         outputName = "d"
     elif inputName == "bf16_r":
         outputName = "b"
+    elif inputName == "xf32_r":
+        outputName = "x"
     else:
         outputName = inputName
 

@@ -2478,7 +2478,8 @@ class Solution(collections.abc.Mapping):
               or state["ProblemType"]["DataType"].isBFloat16() \
               or state["ProblemType"]["DataType"].isHalf() \
               or state["ProblemType"]["DataType"].isComplex() \
-              or state["ProblemType"]["DataType"].isInt8()):
+              or state["ProblemType"]["DataType"].isInt8() \
+              or state["ProblemType"]["DataType"].isXFloat32()):
         reject(state, "didn't support Matrix Instruction with type %s" % str(state["ProblemType"]["DataType"]))
       if not state["MIBlock"] or len(state["MIBlock"]) != 6:
         reject(state, "invalid MIBlock")
@@ -2488,13 +2489,14 @@ class Solution(collections.abc.Mapping):
         reject(state, "invalid MIWaveTile")
       if not state["ProblemType"]["HighPrecisionAccumulate"] \
          and state["ProblemType"]["DataType"].numRegisters() < 1 :
-        reject(state, "Matrix instructions for half, bf16 (or i8) types are natively accumulated" + \
+        reject(state, "Matrix instructions for half, bf16 (or i8), xf32 types are natively accumulated" + \
          " in fp32 (or i32) precision. Please add the following config:" + \
          "\n - HighPrecisionAccumulate: True")
     else:
       if not state["ProblemType"]["HighPrecisionAccumulate"] \
-         and state["ProblemType"]["ComputeDataType"].numRegisters() > state["ProblemType"]["DataType"].numRegisters() :
-        reject(state, "For non-MI Kernel, if sizeof(ComputeDataType) > sizeof(DataType), " + \
+         and (state["ProblemType"]["ComputeDataType"].numRegisters() > state["ProblemType"]["DataType"].numRegisters() \
+              or state["ProblemType"]["DataType"].isXFloat32()):
+        reject(state, "For non-MI Kernel, if sizeof(ComputeDataType) > sizeof(DataType) or type is xf32, "  + \
          "Please add the following config:" + \
          "\n - HighPrecisionAccumulate: True")
 

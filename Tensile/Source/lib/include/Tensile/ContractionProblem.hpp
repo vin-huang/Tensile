@@ -930,7 +930,7 @@ namespace Tensile
     // Commonly used contraction input type groupings
     // Naming: _[Ti_To_Tc]_:
     // S=float, D=double, C=complex<float>, Z=complex<double>,
-    // H=Half, B=BF16, I8x4=Int8x4, I32=int32_t
+    // H=Half, B=BF16, I8x4=Int8x4, I32=int32_t, X=XF32
     using ContractionInputs_S_S_S = TypedContractionInputs<float>;
     using ContractionInputs_D_D_D = TypedContractionInputs<double>;
     using ContractionInputs_C_C_C = TypedContractionInputs<std::complex<float>>;
@@ -948,6 +948,9 @@ namespace Tensile
         = TypedContractionInputs<BFloat16, BFloat16, BFloat16, BFloat16, float, float>;
     using ContractionInputs_B_S_S = TypedContractionInputs<BFloat16, BFloat16, float, float>;
 #endif // TENSILE_USE_BF16
+#ifdef TENSILE_USE_XF32
+    using ContractionInputs_X_S_S = TypedContractionInputs<XFloat32, XFloat32, float, float>;
+#endif // TENSILE_USE_XF32
 
     TENSILE_API std::ostream& operator<<(std::ostream&             stream,
                                          ContractionProblem const& contraction);

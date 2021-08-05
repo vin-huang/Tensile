@@ -212,6 +212,14 @@ int main(int argc, char* argv[])
     break;
 #endif
 
+#ifdef Tensile_DATA_TYPE_TENSILE_XFLOAT32
+    case enum_tensile_xfloat32:
+    {
+        TENSILE_CLIENT_CALL_SETUP(tensile_xfloat32, float, float)
+    }
+    break;
+#endif
+
     default:
         break;
         // nothing

@@ -804,6 +804,7 @@ def writeClientParameters(forBenchmark, solutions, problemSizes, stepName, \
   h += "    ,enum_TensileInt8x4\n"
   h += "    ,enum_TensileInt32\n"
   h += "    ,enum_tensile_bfloat16\n"
+  h += "    ,enum_tensile_xfloat32\n"
   h += "} DataTypeEnum;\n"
   h += "\n"
 

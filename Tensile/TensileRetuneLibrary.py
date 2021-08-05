@@ -103,6 +103,7 @@ def runBenchmarking(solutions, problemSizes, outPath, update):
         "MathTemplates.h",
         "TensileTypes.h",
         "tensile_bfloat16.h",
+        "tensile_xfloat32.h",
         "KernelHeader.h",
         "ReferenceCPU.h",
         "SolutionHelper.cpp",
