@@ -118,6 +118,33 @@ namespace Tensile
             throw std::runtime_error(msg.c_str());
         }
 
+        template <typename A, typename B, typename Accumulator, bool hpa>
+        struct Multiply
+        {
+             inline static Accumulator multiply(A a, B b)
+             {
+                 return static_cast<Accumulator>(a * b);
+             };
+        };
+
+        template <typename A, typename B, typename Accumulator>
+        struct Multiply<A, B, Accumulator, true>
+        {
+             inline static Accumulator multiply(A a, B b)
+             {
+                 return static_cast<Accumulator>(a) * static_cast<Accumulator>(b);
+             };
+        };
+
+        template<typename Accumulator>
+        struct Multiply<Int8x4, Int8x4, Accumulator, true>
+        {
+             inline static Accumulator multiply(Int8x4 a, Int8x4 b)
+             {
+                 return static_cast<Accumulator>(a * b);
+             };
+        };
+
         template <typename Inputs, typename Accumulator>
         void ReferenceSolution<Inputs, Accumulator>::SolveCPU(ContractionProblem const& problem,
                                                               Inputs const&             inputs,
@@ -292,7 +319,8 @@ namespace Tensile
                                 bVal = Transform<typename Inputs::BType>::Input(
                                     inputs.b[bIndex + (bI * bStride) - zpB.padStart], bConjugate);
 
-                            value += static_cast<Accumulator>(aVal * bVal);
+                                value += Multiply<typename Inputs::AType, typename Inputs::BType, Accumulator,
+                                                  !(std::is_same<typename Inputs::AType, Accumulator>() || std::is_same<typename Inputs::BType, Accumulator>())>::multiply(aVal, bVal);
 
                             if(0)
                             {
@@ -587,8 +615,8 @@ namespace Tensile
                                               << " aIndex=" << aIndex << " bIndex=" << bIndex
                                               << " aVal=" << aVal << " bVal=" << bVal << "\n";
                                 }
-
-                                value += static_cast<Accumulator>(aVal * bVal);
+                                value += Multiply<typename Inputs::AType, typename Inputs::BType, Accumulator,
+                                                  !(std::is_same<typename Inputs::AType, Accumulator>() || std::is_same<typename Inputs::BType, Accumulator>())>::multiply(aVal, bVal);
                             }
                         std::vector<size_t> dCoord(outputTensor.dimensions(), 0);
                         dCoord[formatD.activation().batchPosition()]   = n;
