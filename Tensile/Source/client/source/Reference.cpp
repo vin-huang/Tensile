@@ -118,6 +118,38 @@ namespace Tensile
             throw std::runtime_error(msg.c_str());
         }
 
+        /* Transform the data type of A/B to Accumulator if A!=ACC or B!=ACC, but filter out cases, I8/I32/I32 and I8x4/I32/I32
+	 * 
+	 * There are three cases of doing multiplication and their conditions to do transform or not are as below.
+	 * 1. AxB : (A!=ACC or B!=ACC) and A!=I8 and A!=I8x4
+         * 2. alpha x rC :  ((alpha!=ACC or rC!=ACC) and A!=I8 and A!=I8x4
+         * 3. Beta x D : (beta!=ACC or D!=ACC )and A!=I8 and A!=I8x4
+	 */
+        template <typename A, typename B, typename Inputs, typename Accumulator>
+        constexpr bool need_transform
+            = !(std::is_same<A, Accumulator>() && std::is_same<B, Accumulator>())
+              && !std::is_same<typename Inputs::AType, Int8>()    //case I8/I32/I32
+              && !std::is_same<typename Inputs::AType, Int8x4>(); //case I8x4/I32/I32
+
+        template <typename A, typename B, typename Inputs, typename Accumulator>
+        Accumulator multiply(
+            A a,
+            B b,
+            typename std::enable_if<!need_transform<A, B, Inputs, Accumulator>>::type* = nullptr)
+        {
+            return static_cast<Accumulator>(a * b);
+        }
+
+        /* For A!=ACC or B!=ACC */
+        template <typename A, typename B, typename Inputs, typename Accumulator>
+        Accumulator multiply(
+            A a,
+            B b,
+            typename std::enable_if<need_transform<A, B, Inputs, Accumulator>>::type* = nullptr)
+        {
+            return static_cast<Accumulator>(a) * static_cast<Accumulator>(b);
+        }
+
         template <typename Inputs, typename Accumulator>
         void ReferenceSolution<Inputs, Accumulator>::SolveCPU(ContractionProblem const& problem,
                                                               Inputs const&             inputs,
@@ -292,7 +324,10 @@ namespace Tensile
                                 bVal = Transform<typename Inputs::BType>::Input(
                                     inputs.b[bIndex + (bI * bStride) - zpB.padStart], bConjugate);
 
-                            value += static_cast<Accumulator>(aVal * bVal);
+                            value += multiply<typename Inputs::AType,
+                                              typename Inputs::BType,
+                                              Inputs,
+                                              Accumulator>(aVal, bVal);
 
                             if(0)
                             {
@@ -312,12 +347,17 @@ namespace Tensile
                 auto dIndex = d.index(dCoord);
 
                 // Ensure zero*nan returns zero
-                auto beta = static_cast<typename Inputs::DType>(inputs.beta);
-                auto zero = static_cast<typename Inputs::DType>(0);
+                auto beta = inputs.beta;
+                auto zero = static_cast<typename Inputs::BetaType>(0);
 
-                inputs.d[dIndex] = static_cast<typename Inputs::DType>(inputs.alpha)
-                                       * static_cast<typename Inputs::DType>(value)
-                                   + ((beta == zero) ? zero : beta * inputs.c[cIndex]);
+                inputs.d[dIndex] = static_cast<typename Inputs::DType>(
+                    multiply<typename Inputs::AlphaType, Accumulator, Inputs, Accumulator>(
+                        inputs.alpha, value)
+                    + ((beta == zero) ? static_cast<Accumulator>(zero)
+                                      : multiply<typename Inputs::BetaType,
+                                                 typename Inputs::CType,
+                                                 Inputs,
+                                                 Accumulator>(beta, inputs.c[cIndex])));
             }
         }
 
@@ -587,8 +627,10 @@ namespace Tensile
                                               << " aIndex=" << aIndex << " bIndex=" << bIndex
                                               << " aVal=" << aVal << " bVal=" << bVal << "\n";
                                 }
-
-                                value += static_cast<Accumulator>(aVal * bVal);
+                                value += multiply<typename Inputs::AType,
+                                                  typename Inputs::BType,
+                                                  Inputs,
+                                                  Accumulator>(aVal, bVal);
                             }
                         std::vector<size_t> dCoord(outputTensor.dimensions(), 0);
                         dCoord[formatD.activation().batchPosition()]   = n;
@@ -605,8 +647,9 @@ namespace Tensile
                                       << spatialCoord[1] << "," << spatialCoord[0]
                                       << " dIndex=" << dIndex << " value=" << value << "\n";
                         }
-                        inputs.d[dIndex] = static_cast<typename Inputs::DType>(inputs.alpha)
-                                           * static_cast<typename Inputs::DType>(value);
+                        inputs.d[dIndex] = static_cast<typename Inputs::DType>(
+                            multiply<typename Inputs::AlphaType, Accumulator, Inputs, Accumulator>(
+                                inputs.alpha, value));
                     }
         }
 
