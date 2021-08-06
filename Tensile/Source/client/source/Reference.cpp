@@ -118,6 +118,18 @@ namespace Tensile
             throw std::runtime_error(msg.c_str());
         }
 
+        template <typename A, typename B, typename Accumulator>
+        Accumulator multiply(A a, B b)
+        {
+             return static_cast<Accumulator>(a * b);
+        }
+
+        template<>
+        float multiply(XFloat32 a, XFloat32 b)
+        {
+            return static_cast<float>(a) * static_cast<float>(b);
+        }
+
         template <typename Inputs, typename Accumulator>
         void ReferenceSolution<Inputs, Accumulator>::SolveCPU(ContractionProblem const& problem,
                                                               Inputs const&             inputs,
@@ -292,7 +304,7 @@ namespace Tensile
                                 bVal = Transform<typename Inputs::BType>::Input(
                                     inputs.b[bIndex + (bI * bStride) - zpB.padStart], bConjugate);
 
-                            value += static_cast<Accumulator>(aVal * bVal);
+                            value += multiply<typename Inputs::AType, typename Inputs::BType, Accumulator>(aVal, bVal);
 
                             if(0)
                             {
@@ -597,7 +609,7 @@ namespace Tensile
                                               << " aVal=" << aVal << " bVal=" << bVal << "\n";
                                 }
 
-                                value += static_cast<Accumulator>(aVal * bVal);
+                                value += multiply<typename Inputs::AType, typename Inputs::BType, Accumulator>(aVal, bVal);
                             }
                         std::vector<size_t> dCoord(outputTensor.dimensions(), 0);
                         dCoord[formatD.activation().batchPosition()]   = n;

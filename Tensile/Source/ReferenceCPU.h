@@ -272,8 +272,7 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
             }
             else if((std::is_same<Type, tensile_bfloat16>()
                      && std::is_same<DestType, tensile_bfloat16>())
-                    || (std::is_same<Type, tensile_xfloat32>()
-                     && std::is_same<DestType, tensile_xfloat32>())
+                    || std::is_same<Type, tensile_xfloat32>()
                     || localUseHighPrecisionAccumulate)
             {
                 float product = tensileMultiply<float>(valueA, valueB);
@@ -314,8 +313,8 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
             serialIdxD += freeCoord[i] * stridesD[i];
             serialIdxC += freeCoord[i] * stridesC[i];
         }
-        if((std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
-           || (std::is_same<Type, tensile_xfloat32>() && std::is_same<DestType, tensile_xfloat32>())
+        if((std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>()) ||
+            std::is_same<Type, tensile_xfloat32>())
         {
             sumCfloat = tensileMultiply<float>(alpha, sumCfloat);
         }
@@ -329,8 +328,8 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
         }
         if(!tensileIsZero(beta))
         {
-            if((std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
-               || (std::is_same<Type, tensile_xfloat32>() && std::is_same<DestType, tensile_xfloat32>())
+            if((std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>()) ||
+               std::is_same<Type, tensile_xfloat32>())
             {
                 float tmp = tensileMultiply<float>(beta, dataC[serialIdxC]);
                 sumCfloat = tensileAdd<float>(tmp, sumCfloat);
@@ -346,7 +345,6 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
         }
 
         if((std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
-           || (std::is_same<Type, tensile_xfloat32>() && std::is_same<DestType, tensile_xfloat32>())
         {
             dataD[serialIdxD] = static_cast<DestType>(sumCfloat);
         }
