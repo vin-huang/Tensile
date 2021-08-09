@@ -151,7 +151,7 @@ namespace Tensile
         template<>
         BFloat16 multiply<float, BFloat16, ContractionInputs_B_B_S, BFloat16>(float a, BFloat16 b, typename std::enable_if<!need_transform<float, BFloat16, ContractionInputs_B_B_S, BFloat16>>::type*)
         {
-            return static_cast<BFloat16>(a) * b;
+            return static_cast<BFloat16>(a * static_cast<float>(b));
         }
 
         template <typename Inputs, typename Accumulator>
