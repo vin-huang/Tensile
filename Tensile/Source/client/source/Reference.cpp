@@ -370,7 +370,8 @@ namespace Tensile
             // Could remove after rocBLAS is updated
             if(alphaType == DataType::None)
             {
-                alphaType = problem.a().dataType() == DataType::BFloat16 ? DataType::Float
+                alphaType = problem.a().dataType() == DataType::BFloat16 ||
+                            problem.a().dataType() == DataType::XFloat32 ? DataType::Float
                                                                          : problem.d().dataType();
             }
             if(betaType == DataType::None)
@@ -483,6 +484,14 @@ namespace Tensile
                     problem, typedInputs, validationStride);
             }
 #endif // TENSILE_USE_BF16
+#ifdef TENSILE_USE_XF32
+            case ContractionInputs_X_S_S::TypeId():
+            {
+                auto const& typedInputs = dynamic_cast<ContractionInputs_X_S_S const&>(inputs);
+                return ReferenceSolution<ContractionInputs_X_S_S>::SolveCPU(
+                    problem, typedInputs, validationStride);
+            }
+#endif // TENSILE_USE_XF32
 
             default:;
             }

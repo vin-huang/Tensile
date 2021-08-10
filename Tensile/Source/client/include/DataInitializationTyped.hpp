@@ -867,7 +867,7 @@ namespace Tensile
         // Commonly used managed contraction input type groupings
         // Naming: _[Ti_To_Tc]_:
         // S=float, D=double, C=complex<float>, Z=complex<double>,
-        // H=Half, B=BF16, I8x4=Int8x4, I32=int32_t
+        // H=Half, B=BF16, I8x4=Int8x4, I32=int32_t, X=XF32
         using ManagedContractionInputs_S_S_S = ManagedContractionInputs<float>;
         using ManagedContractionInputs_D_D_D = ManagedContractionInputs<double>;
         using ManagedContractionInputs_C_C_C = ManagedContractionInputs<std::complex<float>>;
@@ -889,6 +889,10 @@ namespace Tensile
         using ManagedContractionInputs_B_S_S
             = ManagedContractionInputs<BFloat16, BFloat16, float, float>;
 #endif // TENSILE_USE_BF16
+#ifdef TENSILE_USE_XF32
+        using ManagedContractionInputs_X_S_S
+            = ManagedContractionInputs<XFloat32, XFloat32, float, float>;
+#endif // TENSILE_USE_XF32
 
     } // namespace Client
 } // namespace Tensile

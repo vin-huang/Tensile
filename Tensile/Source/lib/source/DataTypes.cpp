@@ -56,6 +56,8 @@ namespace Tensile
             return "BFloat16";
         case DataType::Int8:
             return "Int8";
+        case DataType::XFloat32:
+            return "XFloat32";
 
         case DataType::Count:;
         }
@@ -84,6 +86,8 @@ namespace Tensile
             return "B";
         case DataType::Int8:
             return "I8";
+        case DataType::XFloat32:
+            return "X";
 
         case DataType::Count:;
         }
@@ -122,6 +126,7 @@ namespace Tensile
         registerTypeInfo<int32_t>();
         registerTypeInfo<BFloat16>();
         registerTypeInfo<int8_t>();
+        registerTypeInfo<XFloat32>();
     }
 
     void DataTypeInfo::registerAllTypeInfoOnce()
