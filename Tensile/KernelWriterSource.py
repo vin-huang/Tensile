@@ -525,6 +525,8 @@ class KernelWriterSource(KernelWriter):
         kStr += "#define MAC(A,B,DST) DST = GenDot4(static_cast<int>(A), static_cast<int>(B), static_cast<int>(DST))"
       elif kernel["ProblemType"]["HighPrecisionAccumulate"] and kernel["ProblemType"]["DataType"].isBFloat16():
         kStr += "#define MAC(A,B,DST) DST += static_cast<float>(A) * static_cast<float>(B);"
+      elif kernel["ProblemType"]["HighPrecisionAccumulate"] and kernel["ProblemType"]["DataType"].isXFloat32():
+        kStr += "#define MAC(A,B,DST) DST += static_cast<float>(A) * static_cast<float>(B);"
       else:
         kStr += "#define MAC(A,B,DST) DST += A*B"
     kStr += self.endLine
@@ -964,7 +966,8 @@ class KernelWriterSource(KernelWriter):
         and kernel["VectorWidth"] > 1 \
         and (kernel["LoopTail"] or kernel["EdgeType"] == "Branch"):
       kStr += "#define SCALAR_ZERO 0%s" % self.endLine
-    elif kernel["ProblemType"]["DestDataType"].isBFloat16():
+    elif kernel["ProblemType"]["DestDataType"].isBFloat16() or \
+         kernel["ProblemType"]["DestDataType"].isXFloat32():
       kStr += "#define SCALAR_ZERO 0.0f%s" % self.endLine
     else:
       kStr += "#define SCALAR_ZERO %s%s" % ( kernel["ProblemType"][\
@@ -975,6 +978,8 @@ class KernelWriterSource(KernelWriter):
     #        Currently use zero since Tensile already has handy functions to create zero in different types
     if kernel["ProblemType"]["HighPrecisionAccumulate"] and kernel["ProblemType"]["DataType"].isBFloat16():
       kStr += "#define SCALAR_OOB_DATA static_cast<tensile_bfloat16>(0.0f)%s" % self.endLine
+    elif kernel["ProblemType"]["HighPrecisionAccumulate"] and kernel["ProblemType"]["DataType"].isXFloat32():
+      kStr += "#define SCALAR_OOB_DATA static_cast<tensile_xfloat32>(0.0f)%s" % self.endLine
     else:
       kStr += "#define SCALAR_OOB_DATA SCALAR_ZERO%s" % self.endLine
 
@@ -2012,7 +2017,8 @@ class KernelWriterSource(KernelWriter):
         alphaZeroStr = "tensile_complex<float>(0.0f)"
       elif kernel["ProblemType"]["ComputeDataType"].isSingle() or \
             kernel["ProblemType"]["ComputeDataType"].isHalf() or \
-            kernel["ProblemType"]["ComputeDataType"].isBFloat16():
+            kernel["ProblemType"]["ComputeDataType"].isBFloat16() or \
+            kernel["ProblemType"]["ComputeDataType"].isXFloat32():
         alphaZeroStr = "0.0f"
       else:
         alphaZeroStr = "0"

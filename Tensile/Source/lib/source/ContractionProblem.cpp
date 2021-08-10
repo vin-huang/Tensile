@@ -1286,4 +1286,7 @@ namespace Tensile
     template struct TypedContractionInputs<BFloat16, BFloat16, BFloat16, BFloat16, float, float>;
     template struct TypedContractionInputs<BFloat16, BFloat16, float, float>;
 #endif
+#ifdef TENSILE_USE_XF32
+    template struct TypedContractionInputs<XFloat32, XFloat32, float, float>;
+#endif
 } // namespace Tensile

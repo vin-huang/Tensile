@@ -1029,6 +1029,7 @@ def copyStaticFiles(outputPath):
       "SolutionMapper.h",
       "TensileTypes.h",
       "tensile_bfloat16.h",
+      "tensile_xfloat32.h",
       "KernelHeader.h",
       "SolutionHelper.cpp",
       "SolutionHelper.h",
@@ -1038,6 +1039,7 @@ def copyStaticFiles(outputPath):
     libraryStaticFiles = [
       "TensileTypes.h",
       "tensile_bfloat16.h",
+      "tensile_xfloat32.h",
       "KernelHeader.h" ]
 
   for fileName in libraryStaticFiles:
