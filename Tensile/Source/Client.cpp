@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
 #ifdef Tensile_DATA_TYPE_TENSILE_XFLOAT32
     case enum_tensile_xfloat32:
     {
-        TENSILE_CLIENT_CALL_SETUP(tensile_xfloat32, float, float)
+        TENSILE_CLIENT_CALL_SETUP(float, float, float)
     }
     break;
 #endif

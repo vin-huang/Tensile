@@ -301,7 +301,7 @@ namespace Tensile
 #ifdef TENSILE_USE_XF32
             case ContractionInputs_X_S_S::TypeId():
             {
-                return GetTyped<ContractionInputs_X_S_S>(args, problemFactory, maxWorkspaceSize);
+                return GetTyped<ContractionInputs_S_S_S>(args, problemFactory, maxWorkspaceSize);
             }
 #endif // TENSILE_USE_XF32
             default:;

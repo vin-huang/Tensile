@@ -187,8 +187,8 @@ namespace Tensile
             // Could remove after rocBLAS is updated
             if(alphaType == DataType::None)
             {
-                alphaType = m_problem.a().dataType() == DataType::BFloat16 ||
-                            m_problem.a().dataType() == DataType::XFloat32
+                alphaType = m_problem.a().dataType() == DataType::BFloat16
+                                    || m_problem.a().dataType() == DataType::XFloat32
                                 ? DataType::Float
                                 : m_problem.d().dataType();
             }
@@ -261,7 +261,7 @@ namespace Tensile
 #ifdef TENSILE_USE_XF32
             case ManagedContractionInputs_X_S_S::TypeId():
             {
-                return validateSolutionCast<ManagedContractionInputs_X_S_S>(inputs);
+                return validateSolutionCast<ManagedContractionInputs_S_S_S>(inputs);
             }
 #endif // TENSILE_USE_XF32
             default:;

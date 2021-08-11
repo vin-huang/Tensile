@@ -898,9 +898,10 @@ namespace Tensile
         // Could remove after rocBLAS is updated
         if(alphaType == DataType::None)
         {
-            alphaType 
-                =  problemType.aType == DataType::BFloat16 || 
-                   problemType.aType == DataType::XFloat32 ? DataType::Float : problemType.dType;
+            alphaType
+                = problemType.aType == DataType::BFloat16 || problemType.aType == DataType::XFloat32
+                      ? DataType::Float
+                      : problemType.dType;
         }
         if(betaType == DataType::None)
         {
@@ -983,7 +984,7 @@ namespace Tensile
 #ifdef TENSILE_USE_XF32
         case ContractionInputs_X_S_S::TypeId():
         {
-            auto const& typedInputs = dynamic_cast<ContractionInputs_X_S_S const&>(inputs);
+            auto const& typedInputs = dynamic_cast<ContractionInputs_S_S_S const&>(inputs);
             return solveTyped(problem, typedInputs, hardware);
         }
 #endif // TENSILE_USE_XF32

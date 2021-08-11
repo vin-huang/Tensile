@@ -175,7 +175,7 @@ class DataType:
             'enum': 'XFloat32',
             'reg': 1,
             'ocl': 'ERROR',
-            'hip': 'tensile_xfloat32',
+            'hip': 'float',
             'libType': 'tensile_xfloat32',
             'libEnum': 'tensileDataTypeXFloat32',
             'isIntegral': False,
