@@ -138,7 +138,11 @@ namespace Tensile
                   Inputs,
                   Accumulator> && !(std::is_same<A, Accumulator>() && std::is_same<B, Accumulator>() && std::is_same<A, B>());
 
-        template <typename A, typename B, typename Inputs, typename Accumulator>
+        template <typename A,
+                  typename B,
+                  typename Inputs,
+                  typename Accumulator,
+                  typename MacAccumulator = Accumulator>
         Accumulator multiply(
             A a,
             B b,
@@ -148,7 +152,11 @@ namespace Tensile
         }
 
         /* For half, bf16 types */
-        template <typename A, typename B, typename Inputs, typename Accumulator>
+        template <typename A,
+                  typename B,
+                  typename Inputs,
+                  typename Accumulator,
+                  typename MacAccumulator = Accumulator>
         Accumulator multiply(
             A a,
             B b,
@@ -172,10 +180,20 @@ namespace Tensile
             return static_cast<BFloat16>(a * static_cast<float>(b));
         }
 
-        template <typename Inputs, typename Accumulator>
-        void ReferenceSolution<Inputs, Accumulator>::SolveCPU(ContractionProblem const& problem,
-                                                              Inputs const&             inputs,
-                                                              size_t validationStride)
+        template <>
+        float multiply<float, float, ContractionInputs_S_S_S, float, XFloat32>(
+            float a,
+            float b,
+            typename std::enable_if<
+                !need_transform<float, float, ContractionInputs_S_S_S, float>>::type*)
+        {
+            return static_cast<float>(static_cast<XFloat32>(a))
+                   * static_cast<float>(static_cast<XFloat32>(b));
+        }
+
+        template <typename Inputs, typename Accumulator, typename MacAccumulator>
+        void ReferenceSolution<Inputs, Accumulator, MacAccumulator>::SolveCPU(
+            ContractionProblem const& problem, Inputs const& inputs, size_t validationStride)
         {
             auto const& freeIndicesA = problem.freeIndicesA();
             auto const& freeIndicesB = problem.freeIndicesB();
@@ -349,7 +367,8 @@ namespace Tensile
                             value += multiply<typename Inputs::AType,
                                               typename Inputs::BType,
                                               Inputs,
-                                              Accumulator>(aVal, bVal);
+                                              Accumulator,
+                                              MacAccumulator>(aVal, bVal);
 
                             if(0)
                             {
@@ -395,9 +414,10 @@ namespace Tensile
             // Could remove after rocBLAS is updated
             if(alphaType == DataType::None)
             {
-                alphaType = problem.a().dataType() == DataType::BFloat16 ||
-                            problem.a().dataType() == DataType::XFloat32 ? DataType::Float
-                                                                         : problem.d().dataType();
+                alphaType = problem.a().dataType() == DataType::BFloat16
+                                    || problem.a().dataType() == DataType::XFloat32
+                                ? DataType::Float
+                                : problem.d().dataType();
             }
             if(betaType == DataType::None)
             {
@@ -416,8 +436,16 @@ namespace Tensile
             case ContractionInputs_S_S_S::TypeId():
             {
                 auto const& typedInputs = dynamic_cast<ContractionInputs_S_S_S const&>(inputs);
-                return ReferenceSolution<ContractionInputs_S_S_S>::SolveCPU(
-                    problem, typedInputs, validationStride);
+                if(problem.computeF32FastXF32())
+                {
+                    return ReferenceSolution<ContractionInputs_S_S_S, float, XFloat32>::SolveCPU(
+                        problem, typedInputs, validationStride);
+                }
+                else
+                {
+                    return ReferenceSolution<ContractionInputs_S_S_S>::SolveCPU(
+                        problem, typedInputs, validationStride);
+                }
             }
             case ContractionInputs_D_D_D::TypeId():
             {
@@ -526,8 +554,8 @@ namespace Tensile
 
         // A is activation, B is weights
         // Assume packed.
-        template <typename Inputs, typename Accumulator>
-        void ReferenceSolution<Inputs, Accumulator>::SolveCPUConvolution(
+        template <typename Inputs, typename Accumulator, typename MacAccumulator>
+        void ReferenceSolution<Inputs, Accumulator, MacAccumulator>::SolveCPUConvolution(
             ConvolutionProblem const& convProblem,
             ContractionProblem const& problem,
             Inputs const&             inputs)
@@ -661,7 +689,8 @@ namespace Tensile
                                 value += multiply<typename Inputs::AType,
                                                   typename Inputs::BType,
                                                   Inputs,
-                                                  Accumulator>(aVal, bVal);
+                                                  Accumulator,
+                                                  MacAccumulator>(aVal, bVal);
                             }
                         std::vector<size_t> dCoord(outputTensor.dimensions(), 0);
                         dCoord[formatD.activation().batchPosition()]   = n;

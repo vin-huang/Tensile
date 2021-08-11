@@ -65,6 +65,7 @@ namespace Tensile
             , m_bOffset(args["offset-b"].as<size_t>())
             , m_cOffset(args["offset-c"].as<size_t>())
             , m_dOffset(args["offset-d"].as<size_t>())
+            , m_computeF32FastXF32(args["compute-f32-fast-xf32"].as<bool>())
 
         {
             if(args.count("problem-identifier"))
@@ -202,7 +203,7 @@ namespace Tensile
                 rv.back().setPerformanceMetric(m_performanceMetric);
                 rv.back().setDeterministicMode(m_deterministicMode);
                 rv.back().setArithmeticUnit(m_arithmeticUnit);
-
+                rv.back().setComputeF32FastXF32(m_computeF32FastXF32);
                 if(m_convProblemSizes.size())
                     rv.back().setConvProblemSizes(m_convProblemSizes[i]);
             }

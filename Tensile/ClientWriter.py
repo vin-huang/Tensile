@@ -642,6 +642,7 @@ def writeClientConfigIni(problemSizes, problemType, sourceDir, codeObjectFiles, 
         param('beta-type',  problemType.betaType.toEnum())
 
         param('high-precision-accumulate', problemType.highPrecisionAccumulate)
+        param('compute-f32-fast-xf32', problemType.computeF32FastXF32)
         param('strided-batched', problemType.stridedBatched)
 
         for problem in problemSizes.problems:
