@@ -37,7 +37,7 @@
 #include <stdint.h>
 typedef struct
 {
-    uint32_t data;
+    float data;
 } tensile_xfloat32;
 
 #else // __cplusplus < 201103L || !defined(__HIPCC__)
@@ -51,7 +51,7 @@ typedef struct
 
 struct tensile_xfloat32
 {
-    uint32_t data;
+    float data;
 
     // Don't initialize `data` in purpose so that it could be used with
     // `__shared__`, which forbid any initializer.
@@ -65,22 +65,18 @@ struct tensile_xfloat32
 
     __host__ __device__ operator float() const
     {
-        union
-        {
-            uint32_t int32;
-            float    fp32;
-        } u = {data};
-        return u.fp32;
+        return data;
     }
 
 private:
-    static __host__ __device__ uint32_t float_to_xfloat32(float f)
+    static __host__ __device__ float float_to_xfloat32(float f)
     {
         union
         {
             float    fp32;
             uint32_t int32;
         } u = {f};
+
         if(~u.int32 & 0x7f800000)
         {
             // When the exponent bits are not all 1s, then the value is zero, normal,
@@ -99,7 +95,9 @@ private:
             // When the xfloat32 value has an exponent of 0xFE and a mantissa of 0x1FF,
             // incrementing it causes it to become an exponent of 0xFF and a mantissa
             // of 0x00, which is Inf, the next higher value to the unrounded value.
-            u.int32 += 0x1fff + ((u.int32 >> 14) & 1); // Round to nearest, round to even
+
+            //TODO: DISABLED due to spend too much time at doing rounding.
+            //u.int32 += 0x1fff + ((u.int32 >> 14) & 1); // Round to nearest, round to even
         }
         else if(u.int32 & 0x3fff)
         {
@@ -113,7 +111,9 @@ private:
             // the xfloat32's mantissa bits are all 0.
             u.int32 |= 0x4000; // Preserve signaling NaN
         }
-        return u.int32 & 0xffffc000;
+
+        u.int32 &= 0xffffc000;
+        return u.fp32;
     }
 };
 
@@ -135,8 +135,13 @@ inline __host__ __device__ tensile_xfloat32 operator+(tensile_xfloat32 a)
 }
 inline __host__ __device__ tensile_xfloat32 operator-(tensile_xfloat32 a)
 {
-    a.data ^= 0x80000000;
-    return a;
+    union
+    {
+        float    fp32;
+        uint32_t int32;
+    } u = {float(a)};
+    u.int32 ^= 0x80000000;
+    return tensile_xfloat32(u.fp32);
 }
 inline __host__ __device__ tensile_xfloat32 operator+(tensile_xfloat32 a, tensile_xfloat32 b)
 {
@@ -224,15 +229,31 @@ inline __host__ __device__ tensile_xfloat32 operator--(tensile_xfloat32& a, int)
 }
 inline __host__ __device__ bool isinf(tensile_xfloat32 a)
 {
-    return !(~a.data & 0x7f800000) && !(a.data & 0x7fc000);
+    union
+    {
+        float    fp32;
+        uint32_t int32;
+    } u = {float(a)};
+
+    return !(~u.int32 & 0x7f800000) && !(u.int32 & 0x7fc000);
 }
 inline __host__ __device__ bool isnan(tensile_xfloat32 a)
 {
-    return !(~a.data & 0x7f800000) && +(a.data & 0x7fc000);
+    union
+    {
+        float    fp32;
+        uint32_t int32;
+    } u = {float(a)};
+    return !(~u.int32 & 0x7f800000) && +(u.int32 & 0x7fc000);
 }
 inline __host__ __device__ bool iszero(tensile_xfloat32 a)
 {
-    return !(a.data & 0x7fffc000);
+    union
+    {
+        float    fp32;
+        uint32_t int32;
+    } u = {float(a)};
+    return !(u.int32 & 0x7fffc000);
 }
 inline tensile_xfloat32 sin(tensile_xfloat32 a)
 {
