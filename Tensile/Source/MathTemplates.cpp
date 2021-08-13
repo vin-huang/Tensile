@@ -184,7 +184,7 @@ tensile_bfloat16 tensileGetRandom<tensile_bfloat16>()
 template <>
 tensile_xfloat32 tensileGetRandom<tensile_xfloat32>()
 {
-    return static_cast<tensile_xfloat32>(static_cast<float>((rand() % 7) - 3));
+    return static_cast<tensile_xfloat32>(tensileGetRandom<float>());
 }
 template <>
 double tensileGetRandom<double>()
@@ -222,7 +222,7 @@ tensile_bfloat16 tensileGetTypeForInt<tensile_bfloat16>(size_t s)
 }
 tensile_xfloat32 tensileGetTypeForInt<tensile_xfloat32>(size_t s)
 {
-    return static_cast<tensile_xfloat32(static_cast<float>(s));
+    return static_cast<tensile_xfloat32>(static_cast<float>(s));
 }
 template <>
 float tensileGetTypeForInt<float>(size_t s)
@@ -666,21 +666,15 @@ bool tensileAlmostEqual(tensile_bfloat16 a, tensile_bfloat16 b)
            < static_cast<tensile_bfloat16>(0.1f);
 }
 template <>
-bool tensileAlmostEqual(tensile_xfloat32 a, tensile_xfloat32 b)
-{
-    tensile_xfloat32 absA
-        = (a > static_cast<tensile_xfloat32>(0.0f)) ? a : static_cast<tensile_xfloat32>(0.0f) - a;
-    tensile_bfloat16 absB
-        = (b > static_cast<tensile_xfloat32>(0.0f)) ? b : static_cast<tensile_xfloat32>(0.0f) - b;
-    tensile_xfloat32 absDiff = (a - b > static_cast<tensile_xfloat32>(0.0f)) ? a - b : b - a;
-    return absDiff / (absA + absB + static_cast<tensile_xfloat32>(1.0f))
-           < static_cast<tensile_xfloat32>(0.01f);
-}
-template <>
 bool tensileAlmostEqual(float a, float b)
 {
     return std::fabs(a - b) / (std::fabs(a) + std::fabs(b) + 1)
            < 0.0001; // 7 digits of precision - 2
+}
+template <>
+bool tensileAlmostEqual(tensile_xfloat32 a, tensile_xfloat32 b)
+{
+    return tensileAlmostEqual(static_cast<float>(a), static_cast<float>(b));
 }
 template <>
 bool tensileAlmostEqual(double a, double b)

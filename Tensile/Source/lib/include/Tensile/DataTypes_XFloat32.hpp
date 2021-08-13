@@ -36,7 +36,7 @@
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
 #endif
 
-#define XFloat32_Q_NAN_VALUE 0xFFC10000
+#define XFloat32_Q_NAN_VALUE 0x7FC00000
 
 namespace Tensile
 {
@@ -58,13 +58,13 @@ namespace Tensile
                   typename = typename std::enable_if<(!std::is_same<T, XFloat32>::value)
                                                      && std::is_convertible<T, float>::value>::type>
         explicit XFloat32(T const& value)
-            : data(float_to_XFloat32(static_cast<float>(value)).data)
+            : data(float_to_XFloat32(static_cast<float>(value)))
         {
         }
 
         explicit operator float() const
         {
-            return XFloat32_to_float(*this);
+            return this->data;
         }
 
         explicit operator double() const
@@ -82,42 +82,36 @@ namespace Tensile
             return static_cast<uint32_t>(float(*this));
         }
 
-        uint32_t data;
+        float data;
 
     private:
-        static const int32_t XFloat32_ZERO_VALUE = 0x00;
+        static constexpr const float XFloat32_ZERO_VALUE = 0.0f;
 
         // zero extend lower 14 bits of XFloat32 to convert to IEEE float
         static float XFloat32_to_float(const XFloat32 v)
         {
-            union
-            {
-                float    fp32 = 0;
-                uint32_t q;
-            };
-
-            q = v.data;
-
-            return fp32;
+            return v.data;
         }
 
         // truncate lower 14 bits of IEEE float to convert to XFloat32
-        static XFloat32 float_to_XFloat32(const float v)
+        static float float_to_XFloat32(const float v)
         {
-            XFloat32 xf32;
-            if(std::isnan(v))
-            {
-                xf32.data = XFloat32_Q_NAN_VALUE;
-                return xf32;
-            }
             union
             {
                 float    fp32;
                 uint32_t p;
             };
-            fp32 = v;
-            xf32.data = p & 0xFFFFC000;
-            return xf32;
+
+            if(std::isnan(v))
+            {
+                p = XFloat32_Q_NAN_VALUE;
+            }
+            else
+            {
+                fp32 = v;
+                p &= 0xFFFFC000;
+            }
+            return fp32;
         }
     };
 
@@ -151,7 +145,6 @@ namespace Tensile
     {
         return static_cast<XFloat32>(static_cast<float>(a) / static_cast<float>(b));
     }
-
     inline bool operator<(XFloat32 a, XFloat32 b)
     {
         return static_cast<float>(a) < static_cast<float>(b);
@@ -227,7 +220,12 @@ namespace std
     }
     inline bool iszero(const Tensile::XFloat32& a)
     {
-        return (a.data & 0x7FFFC000) == 0;
+        union
+        {
+            float    fp32;
+            uint32_t p;
+        } u = {static_cast<float>(a)};
+	return !(u.p & 0x7FFFC000);
     }
 
     inline Tensile::XFloat32 abs(const Tensile::XFloat32& a)

@@ -68,20 +68,16 @@ namespace Tensile
         }
 
         template <>
-        inline bool AlmostEqual(XFloat32 a, XFloat32 b)
-        {
-            XFloat32 absA = (a > static_cast<XFloat32>(0.0f)) ? a : static_cast<XFloat32>(0.0f) - a;
-            XFloat32 absB = (b > static_cast<XFloat32>(0.0f)) ? b : static_cast<XFloat32>(0.0f) - b;
-            XFloat32 absDiff = (a - b > static_cast<XFloat32>(0.0f)) ? a - b : b - a;
-            return absDiff / (absA + absB + static_cast<XFloat32>(1.0f))
-                   < static_cast<XFloat32>(0.01f);
-        }
-
-        template <>
         inline bool AlmostEqual(float a, float b)
         {
             return std::fabs(a - b) / (std::fabs(a) + std::fabs(b) + 1)
                    < 0.0001; // 7 digits of precision - 2
+        }
+
+        template <>
+        inline bool AlmostEqual(XFloat32 a, XFloat32 b)
+        {
+            return AlmostEqual(a.data, b.data);
         }
 
         template <>
@@ -112,7 +108,9 @@ namespace Tensile
             return AlmostEqual(a.real(), b.real()) && AlmostEqual(a.imag(), b.imag());
         }
 
-        template <typename Inputs, typename Accumulator = typename Inputs::DType, typename MacAccumulator = typename Inputs::DType>
+        template <typename Inputs,
+                  typename Accumulator    = typename Inputs::DType,
+                  typename MacAccumulator = typename Inputs::DType>
         struct ReferenceSolution
         {
             static void SolveCPU(ContractionProblem const& contraction,
