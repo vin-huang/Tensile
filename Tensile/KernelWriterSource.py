@@ -527,7 +527,7 @@ class KernelWriterSource(KernelWriter):
         kStr += "#define MAC(A,B,DST) DST += static_cast<float>(A) * static_cast<float>(B);"
       elif kernel["ProblemType"]["HighPrecisionAccumulate"] and kernel["ProblemType"]["DataType"].isXFloat32():
         kStr += "#define MAC(A,B,DST) DST += static_cast<float>(A) * static_cast<float>(B);"
-      elif kernel["ProblemType"]["ComputeF32FastXF32"] and kernel["ProblemType"]["DataType"].isSingle():
+      elif kernel["ProblemType"]["ComputeF32Fast"].isXFloat32() and kernel["ProblemType"]["DataType"].isSingle():
         kStr += "#define MAC(A,B,DST) DST += static_cast<float>(static_cast<tensile_xfloat32>(A)) * static_cast<float>(static_cast<tensile_xfloat32>(B));"
       else:
         kStr += "#define MAC(A,B,DST) DST += A*B"

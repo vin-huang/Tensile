@@ -59,7 +59,7 @@ class BoundIndex:
 
 class ProblemType:
     StateKeys = ['operationIdentifier', 'aType', 'bType', 'cType', 'dType',
-                 'useBeta', 'highPrecisionAccumulate', 'useInitialStridesAB', 'useInitialStridesCD', 'stridedBatched', 'computeF32FastXF32']
+                 'useBeta', 'highPrecisionAccumulate', 'useInitialStridesAB', 'useInitialStridesCD', 'stridedBatched', 'computeF32Fast']
     @classmethod
     def FromOriginalState(cls, d):
         indices = [None]*d['TotalIndices']
@@ -163,9 +163,7 @@ class ProblemType:
 
         rv.batched = d['Batched']
 
-        rv.computeF32FastXF32 = False
-        if 'ComputeF32FastXF32' in d:
-            rv.computeF32FastXF32 = d['ComputeF32FastXF32']
+        rv.computeF32Fast = DataType(d['ComputeF32Fast']) if 'ComputeF32Fast' in d else DataType(0)
 
         return rv
 
@@ -244,11 +242,11 @@ class ProblemType:
             if not self.useBeta:
                 predicates.append(ProblemPredicate("BetaZero"))
             predicates.append(ProblemPredicate("StridedBatched", value=self.stridedBatched))
-            predicates.append(ProblemPredicate("ComputeF32FastXF32", value=self.computeF32FastXF32))
 
         if includeType:
             predicates.append(ProblemPredicate("TypesEqual", value=(self.aType, self.bType, self.cType, self.dType)))
             predicates.append(ProblemPredicate("HighPrecisionAccumulate", value=self.highPrecisionAccumulate))
+            predicates.append(ProblemPredicate("ComputeF32Fast", value=self.computeF32Fast))
 
 
         return predicates

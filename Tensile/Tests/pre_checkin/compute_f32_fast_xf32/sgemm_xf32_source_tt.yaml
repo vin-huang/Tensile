@@ -10,7 +10,7 @@ BenchmarkProblems:
       DataType: s
       DestDataType: s
       ComputeDataType: s
-      ComputeF32FastXF32: True
+      ComputeF32Fast: x
       TransposeA: True
       TransposeB: True
       UseBeta: True

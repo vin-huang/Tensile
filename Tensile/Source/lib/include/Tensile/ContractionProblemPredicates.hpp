@@ -1296,30 +1296,31 @@ namespace Tensile
                 }
             };
 
-            struct ComputeF32FastXF32Equal
-                : public Predicate_CRTP<ComputeF32FastXF32Equal, ContractionProblem>
+            struct ComputeF32FastEqual
+                : public Predicate_CRTP<ComputeF32FastEqual, ContractionProblem>
             {
                 enum
                 {
                     HasIndex = false,
                     HasValue = true
                 };
-                bool value;
+                DataType value;
 
-                ComputeF32FastXF32Equal() = default;
-                ComputeF32FastXF32Equal(bool value)
+                ComputeF32FastEqual() = default;
+                ComputeF32FastEqual(DataType value)
                     : value(value)
                 {
                 }
 
                 static std::string Type()
                 {
-                    return "ComputeF32FastXF32";
+                    return "ComputeF32Fast";
                 }
 
                 virtual bool operator()(ContractionProblem const& problem) const override
                 {
-                    return problem.computeF32FastXF32() == value;
+                    printf("computeF32Fast %d vs %d\n", problem.computeF32Fast(), value);
+                    return problem.computeF32Fast() == value;
                 }
             };
 
