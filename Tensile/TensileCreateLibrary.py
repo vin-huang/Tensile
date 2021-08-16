@@ -1313,6 +1313,7 @@ def WriteClientLibraryFromSolutions(solutionList, libraryWorkingPath, tensileSou
   problemType["DataType"] = problemType["DataType"].value
   problemType["DestDataType"] = problemType["DestDataType"].value
   problemType["ComputeDataType"] = problemType["ComputeDataType"].value
+  problemType["ComputeF32Fast"] = problemType["ComputeF32Fast"].value
   cxxCompiler = globalParameters["CxxCompiler"]
 
   effectiveWorkingPath = os.path.join(libraryWorkingPath, "library")

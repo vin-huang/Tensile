@@ -856,6 +856,11 @@ class ProblemType(Mapping):
           printExit("NO compute data type, or dest data type, or data type specified")
           self["DataType"] = DataType(0)
 
+    if "ComputeF32Fast" in config:
+        self["ComputeF32Fast"] = DataType(config["ComputeF32Fast"]);
+    else:
+        self["ComputeF32Fast"] = DataType(0);
+
     self.convolution = None
     if self["OperationType"] == "GEMM":
       self.checkIfSupportedGEMMType()
@@ -1139,9 +1144,9 @@ class ProblemType(Mapping):
 
     if globalParameters["PrintIndexAssignments"]:
       print("TLUA:  %s (stridePosA(%d) <? unrollIdxA(%d)" % \
-			(state["TLUA"], strideIdxA, unrollIdxA))
+            (state["TLUA"], strideIdxA, unrollIdxA))
       print("TLUB:  %s (stridePosB(%d) <? unrollIdxB(%d)" % \
-	  		(state["TLUB"], strideIdxB, unrollIdxB))
+              (state["TLUB"], strideIdxB, unrollIdxB))
       print("Index01A:  %s" % state["Index01A"])
       print("Index01B:  %s" % state["Index01B"])
     #unrollDimStrideGreaterThanTileDimStrideA = TLUA = !transA = fast
@@ -1191,6 +1196,11 @@ class ProblemType(Mapping):
     # precision and other
     # name += "_SB" if self["StridedBatched"] else "_GB"
     name += "" if self["StridedBatched"] else "_GB" # legacy
+
+    if not self["ComputeF32Fast"].isSingle():
+      name += "_F"
+      name += self["ComputeF32Fast"].toChar()
+
 
     return name
 

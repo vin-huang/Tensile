@@ -1393,7 +1393,7 @@ defaultProblemType = {
     "UseBeta":                  True,             # =True use beta parameter (asm will check for B=0 and optimize the write for that), =False don't use beta parameter
     "HighPrecisionAccumulate":  False,            # f32 += f16*f16, f32 += x32*x32
     "SilentHighPrecisionAccumulate": False,       # Keep kernel names the same for HPA mode.  Useful for testing.
-    "ComputeF32FastXF32": False,                  #
+    "ComputeF32Fast":           0,                # 
 
     "ComplexConjugateA":        False,            # complex data should be conjugated for "C" transpose case
     "ComplexConjugateB":        False,
