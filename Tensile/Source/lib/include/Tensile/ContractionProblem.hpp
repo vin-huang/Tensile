@@ -603,14 +603,14 @@ namespace Tensile
             return m_deterministicMode;
         }
 
-        void setComputeF32Fast(DataType value)
+        void setF32XdlMathOp(DataType value)
         {
-            m_computeF32Fast = value;
+            m_f32XdlMathOp = value;
         }
 
-        DataType computeF32Fast() const
+        DataType f32XdlMathOp() const
         {
-            return m_computeF32Fast;
+            return m_f32XdlMathOp;
         }
 
         /// Largest of the free and bound indices.  Does not include batch size.
@@ -793,7 +793,7 @@ namespace Tensile
         bool              m_highPrecisionAccumulate = false;
         bool              m_deterministicMode       = false;
         bool              m_eligibleForPK           = true;
-        DataType          m_computeF32Fast          = DataType::Float;
+        DataType          m_f32XdlMathOp            = DataType::Float;
         ArithmeticUnit    m_arithmeticUnit          = ArithmeticUnit::Any;
         KernelLanguage    m_kernelLanguage          = KernelLanguage::Any;
         PerformanceMetric m_performanceMetric       = PerformanceMetric::DeviceEfficiency;

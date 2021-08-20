@@ -855,10 +855,10 @@ class ProblemType(Mapping):
           printExit("NO compute data type, or dest data type, or data type specified")
           self["DataType"] = DataType(0)
 
-    if "ComputeF32Fast" in config:
-        self["ComputeF32Fast"] = DataType(config["ComputeF32Fast"]);
+    if "F32XdlMathOp" in config:
+        self["F32XdlMathOp"] = DataType(config["F32XdlMathOp"]);
     else:
-        self["ComputeF32Fast"] = DataType(0);
+        self["F32XdlMathOp"] = DataType(0);
 
     self.convolution = None
     if self["OperationType"] == "GEMM":
@@ -1196,9 +1196,9 @@ class ProblemType(Mapping):
     # name += "_SB" if self["StridedBatched"] else "_GB"
     name += "" if self["StridedBatched"] else "_GB" # legacy
 
-    if not self["ComputeF32Fast"].isSingle():
+    if not self["F32XdlMathOp"].isSingle():
       name += "_F"
-      name += self["ComputeF32Fast"].toChar()
+      name += self["F32XdlMathOp"].toChar()
 
 
     return name

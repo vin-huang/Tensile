@@ -1296,8 +1296,7 @@ namespace Tensile
                 }
             };
 
-            struct ComputeF32FastEqual
-                : public Predicate_CRTP<ComputeF32FastEqual, ContractionProblem>
+            struct F32XdlMathOpEqual : public Predicate_CRTP<F32XdlMathOpEqual, ContractionProblem>
             {
                 enum
                 {
@@ -1306,21 +1305,21 @@ namespace Tensile
                 };
                 DataType value;
 
-                ComputeF32FastEqual() = default;
-                ComputeF32FastEqual(DataType value)
+                F32XdlMathOpEqual() = default;
+                F32XdlMathOpEqual(DataType value)
                     : value(value)
                 {
                 }
 
                 static std::string Type()
                 {
-                    return "ComputeF32Fast";
+                    return "F32XdlMathOp";
                 }
 
                 virtual bool operator()(ContractionProblem const& problem) const override
                 {
-                    printf("computeF32Fast %d vs %d\n", problem.computeF32Fast(), value);
-                    return problem.computeF32Fast() == value;
+                    printf("f32XdlMathOp %d vs %d\n", problem.f32XdlMathOp(), value);
+                    return problem.f32XdlMathOp() == value;
                 }
             };
 

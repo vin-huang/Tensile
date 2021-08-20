@@ -272,7 +272,7 @@ namespace Tensile
             bool        useInitialStridesAB     = false;
             bool        useInitialStridesCD     = false;
             bool        stridedBatched          = true;
-            DataType    computeF32Fast          = DataType::Float;
+            DataType    f32XdlMathOp            = DataType::Float;
         };
 
         struct LinearModel

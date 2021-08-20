@@ -1,42 +1,62 @@
-# benchmark source kernels
+# benchmark assembly and source kernels
 GlobalParameters:
   MinimumRequiredVersion: 4.2.0
+  CMakeBuildType: Release
+  PrintLevel: 1
+  ForceRedoBenchmarkProblems: True
+  ForceRedoLibraryLogic: True
+  ForceRedoLibraryClient: True
+  EnqueuesPerSync: 1
+  SyncsPerBenchmark: 1
   NumElementsToValidate: -1
+  BoundsCheck: True
+  ValidationMaxToPrint: 4
+  ValidationPrintValids: False
+  ShortNames: False
+  MergeFiles: True
+  DataInitTypeAB: 3
+  DataInitTypeC: 3
   KernelTime: True
+  NewClient: 2
+  BufferOffsetA: 128
+  BufferOffsetB: 256
+  BufferOffsetC: 384
+  BufferOffsetD: 512
 
 BenchmarkProblems:
 
-  - # hgemm NN
+  - # sgemm NN
     - # ProblemType
       OperationType: GEMM
       DataType: s
       DestDataType: s
-      ComputeDataType: s
-      ComputeF32Fast: x
       TransposeA: False
       TransposeB: False
       UseBeta: True
       Batched: True
+      StridedBatched: False
+      F32XdlMathOp: x
 
-    - # BenchmarkProblemSizeGroup - Source
+    - # BenchmarkProblemSizeGroup - Assembly
       InitialSolutionParameters:
       BenchmarkCommonParameters:
         - LoopTail: [True]
         - EdgeType: ["ShiftPtr"]
         - KernelLanguage: ["Source"]
       ForkParameters:
-        - GlobalSplitU: [1]
+        - GlobalSplitU: [1, 3]
         - PrefetchLocalRead: [False]
         - PrefetchGlobalRead: [True]
         - ThreadTile:
-          - [ 2, 4 ]
-          - [ 16, 8 ]
+          - [ 3, 5 ]
+          - [ 4, 8 ]
+          - [ 8, 8 ]
         - WorkGroup:
           - [ 32,  4,  1 ]
-        - DepthU: [8]
+          - [  8,  8,  1 ]
+          - [  4,  8,  4 ]
+        - DepthU: [-3]
         - VectorWidth: [-1]
-        - AssertSummationElementMultiple: [1,2]
-        - AssertFree0ElementMultiple: [1,2]
       BenchmarkForkParameters:
       JoinParameters:
       BenchmarkJoinParameters:
@@ -44,24 +64,27 @@ BenchmarkProblems:
         - ProblemSizes:
           - Range: [ [127,1,129], 0, [2], [63,1,65] ]
 
-    - # BenchmarkProblemSizeGroup - Source
+    - # BenchmarkProblemSizeGroup - Assembly
       InitialSolutionParameters:
       BenchmarkCommonParameters:
         - LoopTail: [True]
         - EdgeType: ["ShiftPtr"]
       ForkParameters:
-        - KernelLanguage: ["Source"]
-        - GlobalSplitU: [1]
+        - KernelLanguage: ["Assembly"]
+        - GlobalSplitU: [1, 3]
         - PrefetchLocalRead: [False]
         - PrefetchGlobalRead: [True]
         - ThreadTile:
-          - [ 4, 2 ]
+          - [ 3, 3 ]
+          - [ 4, 4 ]
+          - [ 5, 5 ]
+          - [ 8, 8 ]
         - WorkGroup:
           - [ 16, 16,  1 ]
-        - DepthU: [16]
+          - [  8,  8,  1 ]
+          - [  4,  4,  4 ]
+        - DepthU: [-1]
         - VectorWidth: [-1]
-        - AssertSummationElementMultiple: [1,2]
-        - AssertFree0ElementMultiple: [1,2]
       BenchmarkForkParameters:
       JoinParameters:
       BenchmarkJoinParameters:
@@ -69,25 +92,4 @@ BenchmarkProblems:
         - ProblemSizes:
           - Range: [ [127,1,129], 0, [2], [63,1,65] ]
 
-    - # BenchmarkProblemSizeGroup - Source GSU
-      InitialSolutionParameters:
-      BenchmarkCommonParameters:
-        - LoopTail: [True]
-        - EdgeType: ["ShiftPtr"]
-        - KernelLanguage: ["Source"]
-      ForkParameters:
-        - PrefetchLocalRead: [1]
-        - PrefetchGlobalRead: [True]
-        - ThreadTile:
-          - [ 8, 4 ]
-        - WorkGroup:
-          - [  8,  8,  1 ]
-        - DepthU: [32]
-        - VectorWidth: [2]
-        - GlobalSplitUAlgorithm: ["SingleBuffer", "MultipleBuffer"]
-        - GlobalSplitU: [1, 2, 5, 15]
-      JoinParameters:
-      BenchmarkJoinParameters:
-      BenchmarkFinalParameters:
-        - ProblemSizes:
-          - Range: [ [128,3,134], [128,3,134], [2], [4096,3,4102] ]
+
