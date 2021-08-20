@@ -1295,6 +1295,34 @@ namespace Tensile
                     }
                 }
             };
+
+            struct ComputeF32FastXF32Equal
+                : public Predicate_CRTP<ComputeF32FastXF32Equal, ContractionProblem>
+            {
+                enum
+                {
+                    HasIndex = false,
+                    HasValue = true
+                };
+                bool value;
+
+                ComputeF32FastXF32Equal() = default;
+                ComputeF32FastXF32Equal(bool value)
+                    : value(value)
+                {
+                }
+
+                static std::string Type()
+                {
+                    return "ComputeF32FastXF32";
+                }
+
+                virtual bool operator()(ContractionProblem const& problem) const override
+                {
+                    return problem.computeF32FastXF32() == value;
+                }
+            };
+
         } // namespace Contraction
 
         /**

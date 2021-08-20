@@ -603,6 +603,16 @@ namespace Tensile
             return m_deterministicMode;
         }
 
+        void setComputeF32FastXF32(bool value)
+        {
+            m_computeF32FastXF32 = value;
+        }
+
+        bool computeF32FastXF32() const
+        {
+            return m_computeF32FastXF32;
+        }
+
         /// Largest of the free and bound indices.  Does not include batch size.
         size_t maxProblemSize() const
         {
@@ -783,6 +793,7 @@ namespace Tensile
         bool              m_highPrecisionAccumulate = false;
         bool              m_deterministicMode       = false;
         bool              m_eligibleForPK           = true;
+        bool              m_computeF32FastXF32      = false;
         ArithmeticUnit    m_arithmeticUnit          = ArithmeticUnit::Any;
         KernelLanguage    m_kernelLanguage          = KernelLanguage::Any;
         PerformanceMetric m_performanceMetric       = PerformanceMetric::DeviceEfficiency;

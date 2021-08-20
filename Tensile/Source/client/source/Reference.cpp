@@ -118,9 +118,15 @@ namespace Tensile
             throw std::runtime_error(msg.c_str());
         }
 
-        template <typename Accumulator, typename TypeL, typename TypeR>
+        template <typename Accumulator,
+                  typename MathOpAccum = Accumulator,
+                  typename TypeL,
+                  typename TypeR>
         inline Accumulator multiply(TypeL l, TypeR r)
         {
+            using MultT = std::conditional_t<std::is_same<Accumulator, MathOpAccum>::value,
+                                             Accumulator,
+                                             MathOpAccum>;
             /* Transform the data type from TypeL/TypeR to Accumulator if TypeL!=ACC or TypeR!=ACC, but filter out cases, I8/I32/I32 and I8x4/I32/I32
              *
              * There are three cases of doing multiplication and their conditions to do transform or not are as below.
@@ -129,19 +135,18 @@ namespace Tensile
              * 3. Beta x C : (Beta!=ACC or C!=ACC)
             */
             constexpr bool needAccumCast
-                = !(std::is_same<TypeL, Accumulator>() && std::is_same<TypeR, Accumulator>())
+                = !(std::is_same<TypeL, MultT>() && std::is_same<TypeR, MultT>())
                   && !std::is_same<TypeL, Int8>() //case I8/I32/I32, I8 be implicitly cast to int.
                   && !std::is_same<TypeL, Int8x4>(); //case I8x4/I32/I32, I8x4 overloading the op*.
 
-            using LMultT = std::conditional_t<needAccumCast, Accumulator, TypeL>;
-            using RMultT = std::conditional_t<needAccumCast, Accumulator, TypeR>;
+            using LMultT = std::conditional_t<needAccumCast, MultT, TypeL>;
+            using RMultT = std::conditional_t<needAccumCast, MultT, TypeR>;
             return static_cast<Accumulator>(static_cast<LMultT>(l) * static_cast<RMultT>(r));
         }
 
-        template <typename Inputs, typename Accumulator>
-        void ReferenceSolution<Inputs, Accumulator>::SolveCPU(ContractionProblem const& problem,
-                                                              Inputs const&             inputs,
-                                                              size_t validationStride)
+        template <typename Inputs, typename Accumulator, typename MathOpAccum>
+        void ReferenceSolution<Inputs, Accumulator, MathOpAccum>::SolveCPU(
+            ContractionProblem const& problem, Inputs const& inputs, size_t validationStride)
         {
             auto const& freeIndicesA = problem.freeIndicesA();
             auto const& freeIndicesB = problem.freeIndicesB();
@@ -312,7 +317,7 @@ namespace Tensile
                                 bVal = Transform<typename Inputs::BType>::Input(
                                     inputs.b[bIndex + (bI * bStride) - zpB.padStart], bConjugate);
 
-                            value += multiply<Accumulator>(aVal, bVal);
+                            value += multiply<Accumulator, MathOpAccum>(aVal, bVal);
 
                             if(0)
                             {
@@ -376,8 +381,16 @@ namespace Tensile
             case ContractionInputs_S_S_S::TypeId():
             {
                 auto const& typedInputs = dynamic_cast<ContractionInputs_S_S_S const&>(inputs);
-                return ReferenceSolution<ContractionInputs_S_S_S>::SolveCPU(
-                    problem, typedInputs, validationStride);
+                if(problem.computeF32FastXF32())
+                {
+                    return ReferenceSolution<ContractionInputs_S_S_S, float, XFloat32>::SolveCPU(
+                        problem, typedInputs, validationStride);
+                }
+                else
+                {
+                    return ReferenceSolution<ContractionInputs_S_S_S>::SolveCPU(
+                        problem, typedInputs, validationStride);
+                }
             }
             case ContractionInputs_D_D_D::TypeId():
             {
@@ -486,8 +499,8 @@ namespace Tensile
 
         // A is activation, B is weights
         // Assume packed.
-        template <typename Inputs, typename Accumulator>
-        void ReferenceSolution<Inputs, Accumulator>::SolveCPUConvolution(
+        template <typename Inputs, typename Accumulator, typename MathOpAccum>
+        void ReferenceSolution<Inputs, Accumulator, MathOpAccum>::SolveCPUConvolution(
             ConvolutionProblem const& convProblem,
             ContractionProblem const& problem,
             Inputs const&             inputs)
@@ -618,7 +631,7 @@ namespace Tensile
                                               << " aIndex=" << aIndex << " bIndex=" << bIndex
                                               << " aVal=" << aVal << " bVal=" << bVal << "\n";
                                 }
-                                value += multiply<Accumulator>(aVal, bVal);
+                                value += multiply<Accumulator, MathOpAccum>(aVal, bVal);
                             }
                         std::vector<size_t> dCoord(outputTensor.dimensions(), 0);
                         dCoord[formatD.activation().batchPosition()]   = n;
