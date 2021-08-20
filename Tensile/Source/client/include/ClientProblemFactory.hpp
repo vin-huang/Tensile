@@ -80,7 +80,7 @@ namespace Tensile
             bool              m_highPrecisionAccumulate;
             bool              m_deterministicMode;
             bool              m_cEqualsD;
-            DataType          m_computeF32Fast;
+            DataType          m_f32XdlMathOp;
             ArithmeticUnit    m_arithmeticUnit;
             KernelLanguage    m_kernelLanguage;
             PerformanceMetric m_performanceMetric;

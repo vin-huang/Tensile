@@ -59,7 +59,7 @@ class BoundIndex:
 
 class ProblemType:
     StateKeys = ['operationIdentifier', 'aType', 'bType', 'cType', 'dType',
-                 'useBeta', 'highPrecisionAccumulate', 'useInitialStridesAB', 'useInitialStridesCD', 'stridedBatched', 'computeF32Fast']
+                 'useBeta', 'highPrecisionAccumulate', 'useInitialStridesAB', 'useInitialStridesCD', 'stridedBatched', 'f32XdlMathOp']
     @classmethod
     def FromOriginalState(cls, d):
         indices = [None]*d['TotalIndices']
@@ -163,7 +163,7 @@ class ProblemType:
 
         rv.batched = d['Batched']
 
-        rv.computeF32Fast = DataType(d['ComputeF32Fast']) if 'ComputeF32Fast' in d else DataType(0)
+        rv.f32XdlMathOp = DataType(d['F32XdlMathOp']) if 'F32XdlMathOp' in d else DataType(0)
 
         return rv
 
@@ -246,7 +246,7 @@ class ProblemType:
         if includeType:
             predicates.append(ProblemPredicate("TypesEqual", value=(self.aType, self.bType, self.cType, self.dType)))
             predicates.append(ProblemPredicate("HighPrecisionAccumulate", value=self.highPrecisionAccumulate))
-            predicates.append(ProblemPredicate("ComputeF32Fast", value=self.computeF32Fast))
+            predicates.append(ProblemPredicate("F32XdlMathOp", value=self.f32XdlMathOp))
 
 
         return predicates

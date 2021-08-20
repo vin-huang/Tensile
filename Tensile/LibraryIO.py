@@ -81,8 +81,8 @@ def writeSolutions(filename, problemSizes, solutions):
                     solutionState["ProblemType"]["DestDataType"].value
             solutionState["ProblemType"]["ComputeDataType"] = \
                     solutionState["ProblemType"]["ComputeDataType"].value
-            solutionState["ProblemType"]["ComputeF32Fast"] = \
-                    solutionState["ProblemType"]["ComputeF32Fast"].value
+            solutionState["ProblemType"]["F32XdlMathOp"] = \
+                    solutionState["ProblemType"]["F32XdlMathOp"].value
             solutionStates.append(solutionState)
     # write dictionaries
     with open(filename, "w") as f:
@@ -241,8 +241,8 @@ def createLibraryLogic(schedulePrefix, architectureName, deviceNames, logicTuple
             problemTypeState["DestDataType"].value
     problemTypeState["ComputeDataType"] = \
             problemTypeState["ComputeDataType"].value
-    problemTypeState["ComputeF32Fast"] = \
-            problemTypeState["ComputeF32Fast"].value
+    problemTypeState["F32XdlMathOp"] = \
+            problemTypeState["F32XdlMathOp"].value
     data.append(problemTypeState)
     # solutions
     solutionList = []
@@ -255,8 +255,8 @@ def createLibraryLogic(schedulePrefix, architectureName, deviceNames, logicTuple
                 solutionState["ProblemType"]["DestDataType"].value
         solutionState["ProblemType"]["ComputeDataType"] = \
                 solutionState["ProblemType"]["ComputeDataType"].value
-        solutionState["ProblemType"]["ComputeF32Fast"] = \
-                solutionState["ProblemType"]["ComputeF32Fast"].value
+        solutionState["ProblemType"]["F32XdlMathOp"] = \
+                solutionState["ProblemType"]["F32XdlMathOp"].value
         solutionList.append(solutionState)
 
     if tileSelection:
@@ -270,8 +270,8 @@ def createLibraryLogic(schedulePrefix, architectureName, deviceNames, logicTuple
                     solutionState["ProblemType"]["DestDataType"].value
             solutionState["ProblemType"]["ComputeDataType"] = \
                     solutionState["ProblemType"]["ComputeDataType"].value
-            solutionState["ProblemType"]["ComputeF32Fast"] = \
-                solutionState["ProblemType"]["ComputeF32Fast"].value
+            solutionState["ProblemType"]["F32XdlMathOp"] = \
+                solutionState["ProblemType"]["F32XdlMathOp"].value
             solutionList.append(solutionState)
 
     data.append(solutionList)

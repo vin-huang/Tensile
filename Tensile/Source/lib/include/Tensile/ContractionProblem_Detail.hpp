@@ -110,8 +110,8 @@ namespace Tensile
                                         rhs.workspaceSize(),
                                         lhs.stridedBatched(),
                                         rhs.stridedBatched(),
-                                        lhs.computeF32Fast(),
-                                        rhs.computeF32Fast());
+                                        lhs.f32XdlMathOp(),
+                                        rhs.f32XdlMathOp());
         }
     };
 } // namespace Tensile
@@ -135,7 +135,7 @@ namespace std
                                          problem.workspaceSize(),
                                          problem.stridedBatched(),
                                          problem.performanceMetric(),
-                                         problem.computeF32Fast());
+                                         problem.f32XdlMathOp());
         }
     };
 

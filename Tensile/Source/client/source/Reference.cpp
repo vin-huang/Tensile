@@ -381,13 +381,12 @@ namespace Tensile
             case ContractionInputs_S_S_S::TypeId():
             {
                 auto const& typedInputs = dynamic_cast<ContractionInputs_S_S_S const&>(inputs);
-                if(problem.computeF32Fast() == DataType::XFloat32)
+                if(problem.f32XdlMathOp() == DataType::XFloat32)
                     return ReferenceSolution<ContractionInputs_S_S_S, float, XFloat32>::SolveCPU(
                         problem, typedInputs, validationStride);
                 else
                     return ReferenceSolution<ContractionInputs_S_S_S>::SolveCPU(
                         problem, typedInputs, validationStride);
-
             }
             case ContractionInputs_D_D_D::TypeId():
             {

@@ -698,7 +698,7 @@ namespace Tensile
         , m_boundIndices(boundIndices)
         , m_beta(beta)
         , m_workspaceSize(workspaceSize)
-        , m_computeF32Fast(DataType::Float)
+        , m_f32XdlMathOp(DataType::Float)
     {
         m_betaRestriction = toScalarValueEnum(
             m_beta); // Set enum using beta to potentially allow for faster solutions

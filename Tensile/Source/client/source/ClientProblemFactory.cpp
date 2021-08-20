@@ -65,7 +65,7 @@ namespace Tensile
             , m_bOffset(args["offset-b"].as<size_t>())
             , m_cOffset(args["offset-c"].as<size_t>())
             , m_dOffset(args["offset-d"].as<size_t>())
-            , m_computeF32Fast(DataType::Float)
+            , m_f32XdlMathOp(DataType::Float)
 
         {
             if(args.count("problem-identifier"))
@@ -98,8 +98,8 @@ namespace Tensile
             if(args.count("beta-type"))
                 m_betaType = args["beta-type"].as<DataType>();
 
-            if(args.count("compute-f32-fast"))
-                m_computeF32Fast = args["compute-f32-fast"].as<DataType>();
+            if(args.count("f32-xdl-math-op"))
+                m_f32XdlMathOp = args["f32-xdl-math-op"].as<DataType>();
 
             m_beta  = DataInitialization::getValue<double>(args["init-beta"].as<InitMode>());
             m_alpha = DataInitialization::getValue<double>(args["init-alpha"].as<InitMode>());
@@ -206,7 +206,7 @@ namespace Tensile
                 rv.back().setPerformanceMetric(m_performanceMetric);
                 rv.back().setDeterministicMode(m_deterministicMode);
                 rv.back().setArithmeticUnit(m_arithmeticUnit);
-                rv.back().setComputeF32Fast(m_computeF32Fast);
+                rv.back().setF32XdlMathOp(m_f32XdlMathOp);
                 if(m_convProblemSizes.size())
                     rv.back().setConvProblemSizes(m_convProblemSizes[i]);
             }
