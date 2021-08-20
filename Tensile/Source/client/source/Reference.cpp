@@ -124,9 +124,6 @@ namespace Tensile
                   typename TypeR>
         inline Accumulator multiply(TypeL l, TypeR r)
         {
-            using MultT = std::conditional_t<std::is_same<Accumulator, MathOpAccum>::value,
-                                             Accumulator,
-                                             MathOpAccum>;
             /* Transform the data type from TypeL/TypeR to Accumulator if TypeL!=ACC or TypeR!=ACC, but filter out cases, I8/I32/I32 and I8x4/I32/I32
              *
              * There are three cases of doing multiplication and their conditions to do transform or not are as below.
@@ -135,13 +132,20 @@ namespace Tensile
              * 3. Beta x C : (Beta!=ACC or C!=ACC)
             */
             constexpr bool needAccumCast
-                = !(std::is_same<TypeL, MultT>() && std::is_same<TypeR, MultT>())
+                = !(std::is_same<TypeL, Accumulator>() && std::is_same<TypeR, Accumulator>())
                   && !std::is_same<TypeL, Int8>() //case I8/I32/I32, I8 be implicitly cast to int.
                   && !std::is_same<TypeL, Int8x4>(); //case I8x4/I32/I32, I8x4 overloading the op*.
 
-            using LMultT = std::conditional_t<needAccumCast, MultT, TypeL>;
-            using RMultT = std::conditional_t<needAccumCast, MultT, TypeR>;
+            using LMultT = std::conditional_t<needAccumCast, Accumulator, TypeL>;
+            using RMultT = std::conditional_t<needAccumCast, Accumulator, TypeR>;
             return static_cast<Accumulator>(static_cast<LMultT>(l) * static_cast<RMultT>(r));
+        }
+
+        template <>
+        inline float multiply<float, XFloat32, float, float>(float l, float r)
+        {
+            return static_cast<float>(static_cast<XFloat32>(l))
+                   * static_cast<float>(static_cast<XFloat32>(r));
         }
 
         template <typename Inputs, typename Accumulator, typename MathOpAccum>
