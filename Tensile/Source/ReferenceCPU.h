@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2016-2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright 2016-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -272,7 +272,7 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
             }
             else if((std::is_same<Type, tensile_bfloat16>()
                      && std::is_same<DestType, tensile_bfloat16>())
-                    || localUseHighPrecisionAccumulate)
+                    || std::is_same<Type, tensile_xfloat32>() || localUseHighPrecisionAccumulate)
             {
                 float product = tensileMultiply<float>(valueA, valueB);
                 sumCfloat     = tensileAdd<float>(sumCfloat, product);
@@ -312,7 +312,8 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
             serialIdxD += freeCoord[i] * stridesD[i];
             serialIdxC += freeCoord[i] * stridesC[i];
         }
-        if(std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
+        if((std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
+           || std::is_same<Type, tensile_xfloat32>())
         {
             sumCfloat = tensileMultiply<float>(alpha, sumCfloat);
         }
@@ -326,7 +327,9 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
         }
         if(!tensileIsZero(beta))
         {
-            if(std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
+            if((std::is_same<Type, tensile_bfloat16>()
+                && std::is_same<DestType, tensile_bfloat16>())
+               || std::is_same<Type, tensile_xfloat32>())
             {
                 float tmp = tensileMultiply<float>(beta, dataC[serialIdxC]);
                 sumCfloat = tensileAdd<float>(tmp, sumCfloat);
@@ -341,7 +344,7 @@ TensileStatus tensileReferenceCPU(DestType*           dataD,
             }
         }
 
-        if(std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
+        if((std::is_same<Type, tensile_bfloat16>() && std::is_same<DestType, tensile_bfloat16>())
         {
             dataD[serialIdxD] = static_cast<DestType>(sumCfloat);
         }

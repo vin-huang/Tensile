@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2016-2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright 2016-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -208,6 +208,14 @@ int main(int argc, char* argv[])
     case enum_tensile_bfloat16:
     {
         TENSILE_CLIENT_CALL_SETUP(tensile_bfloat16, tensile_bfloat16, float)
+    }
+    break;
+#endif
+
+#ifdef Tensile_DATA_TYPE_TENSILE_XFLOAT32
+    case enum_tensile_xfloat32:
+    {
+        TENSILE_CLIENT_CALL_SETUP(tensile_xfloat32, float, float)
     }
     break;
 #endif

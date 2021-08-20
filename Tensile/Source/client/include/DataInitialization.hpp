@@ -2,7 +2,7 @@
  *
  * MIT License
  *
- * Copyright 2019-2020 Advanced Micro Devices, Inc.
+ * Copyright 2019-2021 Advanced Micro Devices, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -916,6 +916,54 @@ namespace Tensile
         }
 
         template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::Zero>()
+        {
+            return static_cast<XFloat32>(0);
+        }
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::One>()
+        {
+            return static_cast<XFloat32>(1);
+        }
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::Two>()
+        {
+            return static_cast<XFloat32>(2);
+        }
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::NegOne>()
+        {
+            return static_cast<XFloat32>(-1);
+        }
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::NaN>()
+        {
+            return static_cast<XFloat32>(std::numeric_limits<float>::quiet_NaN());
+        }
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::Inf>()
+        {
+            return static_cast<XFloat32>(std::numeric_limits<float>::infinity());
+        }
+
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::Random>()
+        {
+            return static_cast<XFloat32>((rand() % 7) - 3);
+        }
+
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::BadInput>()
+        {
+            return getValue<XFloat32, InitMode::NaN>();
+        }
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::BadOutput>()
+        {
+            return getValue<XFloat32, InitMode::Inf>();
+        }
+
+        template <>
         inline int8_t DataInitialization::getValue<int8_t, InitMode::Zero>()
         {
             return 0;
@@ -1012,6 +1060,12 @@ namespace Tensile
         }
 
         template <>
+        inline bool DataInitialization::isBadInput<XFloat32>(XFloat32 value)
+        {
+            return std::isnan(value);
+        }
+
+        template <>
         inline bool DataInitialization::isBadInput<int8_t>(int8_t value)
         {
             return value == DataInitialization::getValue<int8_t, InitMode::BadInput>();
@@ -1067,6 +1121,12 @@ namespace Tensile
         }
 
         template <>
+        inline bool DataInitialization::isBadOutput<XFloat32>(XFloat32 value)
+        {
+            return std::isinf(value);
+        }
+
+        template <>
         inline bool DataInitialization::isBadOutput<int8_t>(int8_t value)
         {
             return value == DataInitialization::getValue<int8_t, InitMode::BadOutput>();
@@ -1101,6 +1161,13 @@ namespace Tensile
             DataInitialization::getTrigValue<BFloat16>(int idx, bool useCos, bool useAbs)
         {
             return static_cast<BFloat16>(getTrigValue<float>(idx, useCos, useAbs));
+        }
+
+        template <>
+        inline XFloat32
+            DataInitialization::getTrigValue<XFloat32>(int idx, bool useCos, bool useAbs)
+        {
+            return static_cast<XFloat32>(getTrigValue<float>(idx, useCos, useAbs));
         }
 
         template <>
@@ -1165,6 +1232,14 @@ namespace Tensile
         };
 
         template <>
+        struct FP_PARAM<XFloat32>
+        {
+            using UINT_T                = uint32_t;
+            static constexpr int NUMSIG = 9;
+            static constexpr int NUMEXP = 8;
+        };
+
+        template <>
         struct FP_PARAM<Half>
         {
             using UINT_T                = uint16_t;
@@ -1181,7 +1256,10 @@ namespace Tensile
             using random_fp_int_dist = std::uniform_int_distribution<UINT_T>;
 
             static_assert(sizeof(UINT_T) == sizeof(T), "Type sizes do not match");
-            static constexpr UINT_T expmask = (((UINT_T)1 << NUMEXP) - 1) << NUMSIG;
+            //XFloat32 is 32 bits the exp will address at bit 30:22.
+            static constexpr UINT_T expmask
+                = (((UINT_T)1 << NUMEXP) - 1)
+                  << (std::is_same<T, XFloat32>::value ? FP_PARAM<float>::NUMSIG : NUMSIG);
             static constexpr UINT_T expbias = ((UINT_T)1 << (NUMEXP - 1)) - 1;
             inline static T         signsig_exp(UINT_T signsig, UINT_T exp)
             {
@@ -1203,6 +1281,23 @@ namespace Tensile
             FP_PARAM<BFloat16>::UINT_T u;
             u = signsig & ~expmask | ((exp + expbias) << NUMSIG) & expmask;
             return static_cast<BFloat16>(u);
+        }
+
+        template <>
+        inline XFloat32
+            rocm_random_common<XFloat32>::signsig_exp(FP_PARAM<XFloat32>::UINT_T signsig,
+                                                      FP_PARAM<XFloat32>::UINT_T exp)
+        {
+            union
+            {
+                FP_PARAM<XFloat32>::UINT_T u;
+                float                      fp32;
+            };
+
+            //signsig place at bits [22:14], put bits [13:0] to zero
+            u = signsig & ~(expmask | 0x3FFF)
+                | ((exp + expbias) << FP_PARAM<float>::NUMSIG) & expmask;
+            return static_cast<XFloat32>(fp32);
         }
 
         template <typename T, int LOW_EXP, int HIGH_EXP>
@@ -1237,6 +1332,11 @@ namespace Tensile
         };
 
         template <>
+        struct rocm_random_narrow_range<XFloat32> : rocm_random<XFloat32, -100, 0>
+        {
+        };
+
+        template <>
         struct rocm_random_narrow_range<Half> : rocm_random<Half, -100, 0>
         {
         };
@@ -1257,6 +1357,12 @@ namespace Tensile
         inline BFloat16 DataInitialization::getValue<BFloat16, InitMode::RandomNarrow>()
         {
             return rocm_random_narrow_range<BFloat16>{}();
+        }
+
+        template <>
+        inline XFloat32 DataInitialization::getValue<XFloat32, InitMode::RandomNarrow>()
+        {
+            return rocm_random_narrow_range<XFloat32>{}();
         }
 
         template <>

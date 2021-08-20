@@ -23,6 +23,7 @@
 #ifndef TENSILETYPES_H
 #define TENSILETYPES_H
 #include "tensile_bfloat16.h"
+#include "tensile_xfloat32.h"
 #include <algorithm>
 #include <iostream>
 #include <math.h>

@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright 2019-2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright 2019-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -65,6 +65,16 @@ namespace Tensile
             BFloat16 absDiff = (a - b > static_cast<BFloat16>(0.0f)) ? a - b : b - a;
             return absDiff / (absA + absB + static_cast<BFloat16>(1.0f))
                    < static_cast<BFloat16>(0.1f);
+        }
+
+        template <>
+        inline bool AlmostEqual(XFloat32 a, XFloat32 b)
+        {
+            XFloat32 absA = (a > static_cast<XFloat32>(0.0f)) ? a : static_cast<XFloat32>(0.0f) - a;
+            XFloat32 absB = (b > static_cast<XFloat32>(0.0f)) ? b : static_cast<XFloat32>(0.0f) - b;
+            XFloat32 absDiff = (a - b > static_cast<XFloat32>(0.0f)) ? a - b : b - a;
+            return absDiff / (absA + absB + static_cast<XFloat32>(1.0f))
+                   < static_cast<XFloat32>(0.01f);
         }
 
         template <>

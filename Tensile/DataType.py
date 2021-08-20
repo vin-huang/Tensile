@@ -1,5 +1,5 @@
 ################################################################################
-# Copyright 2019-2020 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright 2019-2021 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -167,6 +167,21 @@ class DataType:
             'isComplex': False,
             'packing': 1
         },
+        {
+            'char': 'X',
+            'name': 'xfloat32',
+            'nameAbbrev': 'xf32',
+            'miOutTypeNameAbbrev': 'f32',
+            'enum': 'XFloat32',
+            'reg': 1,
+            'ocl': 'ERROR',
+            'hip': 'tensile_xfloat32',
+            'libType': 'tensile_xfloat32',
+            'libEnum': 'tensileDataTypeXFloat32',
+            'isIntegral': False,
+            'isComplex': False,
+            'packing': 1
+        },
     ]
     lookup = {}
 
@@ -255,6 +270,8 @@ class DataType:
         return self.value == DataType.int8
     def isBFloat16(self):
         return self.value == DataType.bfloat16
+    def isXFloat32(self):
+        return self.value == DataType.xfloat32
     def isNone(self):
         return self.value == None
 

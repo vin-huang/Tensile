@@ -91,7 +91,7 @@ def getAssemblyCodeObjectFiles(kernels, kernelWriterAssembly, outputPath):
           coFile = os.path.join(os.path.normcase(destArchDir), 'TensileLibrary_{}.co'.format(archName))
 
         if os.name == "nt":
-          # On Windows, the objectFiles list command line (including spaces) 
+          # On Windows, the objectFiles list command line (including spaces)
           # exceeds the limit of 8191 characters, so using response file
 
           responseArgs = objectFiles
@@ -109,7 +109,7 @@ def getAssemblyCodeObjectFiles(kernels, kernelWriterAssembly, outputPath):
         coFiles.append(coFile)
       else:
         # no mergefiles
-        
+
         assemblyKernelNames = [kernelWriterAssembly.getKernelFileBase(k) for k in archKernels]
         origCOFiles = [os.path.join(asmDir,  k + '.co') for k in assemblyKernelNames]
         newCOFiles  = []
@@ -1029,6 +1029,7 @@ def copyStaticFiles(outputPath):
       "SolutionMapper.h",
       "TensileTypes.h",
       "tensile_bfloat16.h",
+      "tensile_xfloat32.h",
       "KernelHeader.h",
       "SolutionHelper.cpp",
       "SolutionHelper.h",
@@ -1038,6 +1039,7 @@ def copyStaticFiles(outputPath):
     libraryStaticFiles = [
       "TensileTypes.h",
       "tensile_bfloat16.h",
+      "tensile_xfloat32.h",
       "KernelHeader.h" ]
 
   for fileName in libraryStaticFiles:
@@ -1548,13 +1550,13 @@ def TensileCreateLibrary():
 
   codeObjectFiles = writeSolutionsAndKernels(outputPath, CxxCompiler, problemTypes, solutions,
                                              kernels, kernelHelperOjbs, solutionWriter, kernelWriterSource, kernelWriterAssembly)
-  
+
   bothLibSet = set(sourceLibPaths + asmLibPaths)
-  setA = set( map( os.path.normcase, set(codeObjectFiles) ) ) 
+  setA = set( map( os.path.normcase, set(codeObjectFiles) ) )
   setB = set( map( os.path.normcase, bothLibSet ) )
 
-  sanityCheck0 = setA - setB 
-  sanityCheck1 = setB - setA 
+  sanityCheck0 = setA - setB
+  sanityCheck1 = setB - setA
 
   if globalParameters["PrintCodeCommands"]:
     print("codeObjectFiles:", codeObjectFiles)

@@ -899,7 +899,9 @@ namespace Tensile
         if(alphaType == DataType::None)
         {
             alphaType
-                = problemType.aType == DataType::BFloat16 ? DataType::Float : problemType.dType;
+                = problemType.aType == DataType::BFloat16 || problemType.aType == DataType::XFloat32
+                      ? DataType::Float
+                      : problemType.dType;
         }
         if(betaType == DataType::None)
         {
@@ -979,7 +981,13 @@ namespace Tensile
             return solveTyped(problem, typedInputs, hardware);
         }
 #endif // TENSILE_USE_BF16
-
+#ifdef TENSILE_USE_XF32
+        case ContractionInputs_X_S_S::TypeId():
+        {
+            auto const& typedInputs = dynamic_cast<ContractionInputs_X_S_S const&>(inputs);
+            return solveTyped(problem, typedInputs, hardware);
+        }
+#endif // TENSILE_USE_XF32
         default:;
         }
         throw std::runtime_error("Data type not implemented.");

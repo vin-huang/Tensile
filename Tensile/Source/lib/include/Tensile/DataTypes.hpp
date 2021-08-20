@@ -2,7 +2,7 @@
  *
  * MIT License
  *
- * Copyright 2019-2020 Advanced Micro Devices, Inc.
+ * Copyright 2019-2021 Advanced Micro Devices, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@
 #include <Tensile/DataTypes_Half.hpp>
 #include <Tensile/DataTypes_Int8.hpp>
 #include <Tensile/DataTypes_Int8x4.hpp>
+#include <Tensile/DataTypes_XFloat32.hpp>
 
 namespace Tensile
 {
@@ -68,6 +69,7 @@ namespace Tensile
         Int32,
         BFloat16,
         Int8,
+        XFloat32,
         Count,
         None = Count
     };
@@ -200,6 +202,11 @@ namespace Tensile
     // Enum DataType::Int8 maps to int8_t, struct Tensile::Int8 is only used for LogTensor now
     template <>
     struct TypeInfo<int8_t> : public BaseTypeInfo<int8_t, DataType::Int8, 1, false, true>
+    {
+    };
+
+    template <>
+    struct TypeInfo<XFloat32> : public BaseTypeInfo<XFloat32, DataType::XFloat32, 1, false, false>
     {
     };
 

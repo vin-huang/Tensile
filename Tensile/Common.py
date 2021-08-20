@@ -338,6 +338,7 @@ validMatrixInstructions = validMatrixInstructions + validMFMA["_format9"]
 validGEMMTypes = [ ('D','D','D'), ('S','S','S'), ('Z','Z','Z'), ('C','C','C'), \
                   ('H','H','H'), ('H','H','S'), ('H','S','S'), \
                   ('B','B','S'), ('B','S','S'), \
+                  ('X','S','S'), \
                   ('4xi8','I','I'), \
                   ('I8','I','I')]
 
@@ -1397,7 +1398,7 @@ defaultProblemType = {
     "DestDataType":             0,                # destination data types can specified by a variety of ways, such as "s", as listed in SolutionStructs.py::DataType
     "ComputeDataType":          0,                # compute data types can specified by a variety of ways, such as "s", as listed in SolutionStructs.py::DataType
     "UseBeta":                  True,             # =True use beta parameter (asm will check for B=0 and optimize the write for that), =False don't use beta parameter
-    "HighPrecisionAccumulate":  False,            # f32 += f16*f16
+    "HighPrecisionAccumulate":  False,            # f32 += f16*f16, f32 += x32*x32
     "SilentHighPrecisionAccumulate": False,       # Keep kernel names the same for HPA mode.  Useful for testing.
 
     "ComplexConjugateA":        False,            # complex data should be conjugated for "C" transpose case
@@ -1750,7 +1751,7 @@ def detectGlobalCurrentISA():
   Returns returncode if detection failure
   """
   global globalParameters
-  
+
   if globalParameters["CurrentISA"] == (0,0,0) and globalParameters["ROCmAgentEnumeratorPath"]:
     process = subprocess.run([globalParameters["ROCmAgentEnumeratorPath"]], stdout=subprocess.PIPE)
     if os.name == "nt":
@@ -1775,7 +1776,7 @@ def detectGlobalCurrentISA():
       printWarning("%s exited with code %u" % (globalParameters["ROCmAgentEnumeratorPath"], process.returncode))
     return process.returncode
   return 0
-      
+
 def restoreDefaultGlobalParameters():
   """
   Restores `globalParameters` back to defaults.

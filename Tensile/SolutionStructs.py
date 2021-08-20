@@ -2377,12 +2377,12 @@ class Solution(collections.abc.Mapping):
     numBytes = state["ProblemType"]["DataType"].numBytes()
 
     # x2/x4 support for directToLds
-     
+
     # numelements_perlane = 4/numBytes
-    # TN with transposeLDS feature should work as long as state["AssertSummationElementMultiple"] % (numelements_perlane*2) = 0 
+    # TN with transposeLDS feature should work as long as state["AssertSummationElementMultiple"] % (numelements_perlane*2) = 0
     #                                                     state["AssertSummationElementMultiple"] % (numelements_perlane*4) = 0
 
-    #NT 
+    #NT
     # use only for f32 & DGEMM and TLU = 1
     #TN
     # use for all precisions with TransposeLDS=1
@@ -2399,7 +2399,7 @@ class Solution(collections.abc.Mapping):
       return False
 
     # GLVW*BPe only for precision(s) < 4 (bpe)
-    if (state["ProblemType"]["TLU%c"%tc] == True and numBytes < 4): 
+    if (state["ProblemType"]["TLU%c"%tc] == True and numBytes < 4):
       if state["GlobalLoadVectorWidth%c"%tc] * numBytes != 4:
         return False
 
@@ -2518,7 +2518,8 @@ class Solution(collections.abc.Mapping):
               or state["ProblemType"]["DataType"].isBFloat16() \
               or state["ProblemType"]["DataType"].isHalf() \
               or state["ProblemType"]["DataType"].isComplex() \
-              or state["ProblemType"]["DataType"].isInt8()):
+              or state["ProblemType"]["DataType"].isInt8() \
+              or state["ProblemType"]["DataType"].isXFloat32()):
         reject(state, "didn't support Matrix Instruction with type %s" % str(state["ProblemType"]["DataType"]))
       if not state["MIBlock"] or len(state["MIBlock"]) != 6:
         reject(state, "invalid MIBlock")
@@ -2528,13 +2529,14 @@ class Solution(collections.abc.Mapping):
         reject(state, "invalid MIWaveTile")
       if not state["ProblemType"]["HighPrecisionAccumulate"] \
          and state["ProblemType"]["DataType"].numRegisters() < 1 :
-        reject(state, "Matrix instructions for half, bf16 (or i8) types are natively accumulated" + \
+        reject(state, "Matrix instructions for half, bf16 (or i8), xf32 types are natively accumulated" + \
          " in fp32 (or i32) precision. Please add the following config:" + \
          "\n - HighPrecisionAccumulate: True")
     else:
       if not state["ProblemType"]["HighPrecisionAccumulate"] \
-         and state["ProblemType"]["ComputeDataType"].numRegisters() > state["ProblemType"]["DataType"].numRegisters() :
-        reject(state, "For non-MI Kernel, if sizeof(ComputeDataType) > sizeof(DataType), " + \
+         and (state["ProblemType"]["ComputeDataType"].numRegisters() > state["ProblemType"]["DataType"].numRegisters() \
+              or state["ProblemType"]["DataType"].isXFloat32()):
+        reject(state, "For non-MI Kernel, if sizeof(ComputeDataType) > sizeof(DataType) or type is xf32, "  + \
          "Please add the following config:" + \
          "\n - HighPrecisionAccumulate: True")
 
@@ -3227,10 +3229,10 @@ class Solution(collections.abc.Mapping):
     if state["LocalReadVectorWidth"] == -1:
       if state["EnableMatrixInstruction"]:
         state["LocalReadVectorWidth"] = state["MIInputPerThread"]
-        # enable less than state["MIInputPerThread"] 
-        # for fp64 this means ds_read_b32 
+        # enable less than state["MIInputPerThread"]
+        # for fp64 this means ds_read_b32
         if ((state["DirectToLdsA"] and state["ProblemType"]["TLUA"]) or \
-            (state["DirectToLdsB"] and state["ProblemType"]["TLUB"])): 
+            (state["DirectToLdsB"] and state["ProblemType"]["TLUB"])):
              state["LocalReadVectorWidth"] = 1 if (state["ProblemType"]["DataType"].numBytes() >= 4) else state["LocalReadVectorWidth"]
       else:
         state["LocalReadVectorWidth"] = state["VectorWidth"]
@@ -3265,7 +3267,7 @@ class Solution(collections.abc.Mapping):
           state["LdsPadA"] = state["VectorWidth"]
         ## turn-off padding for directToLds
         if state["EnableMatrixInstruction"] and state["TransposeLDS"] and state["DirectToLdsA"]:
-          state["LdsPadA"] = 0 
+          state["LdsPadA"] = 0
       assert(state["LdsPadA"] >= 0)
     if state["LdsPadB"] == -1:
       if state["ProblemType"]["TLUB"]:
@@ -3276,7 +3278,7 @@ class Solution(collections.abc.Mapping):
         else:
           state["LdsPadB"] = state["VectorWidth"]
         if state["EnableMatrixInstruction"] and state["TransposeLDS"] and state["DirectToLdsB"]:
-          state["LdsPadB"] = 0 
+          state["LdsPadB"] = 0
       assert(state["LdsPadB"] >= 0)
 
     if (state["UnrollMajorLDSA"] or state["UnrollMajorLDSB"]) and (not state["EnableMatrixInstruction"]):
@@ -3379,7 +3381,7 @@ class Solution(collections.abc.Mapping):
 
     if state["EnableMatrixInstruction"]:
       if state["DirectToLds"] and state["1LDSBuffer"]:
-        reject(state, "1LDSBuffer must be 0 for directToLds") 
+        reject(state, "1LDSBuffer must be 0 for directToLds")
 
     if state["1LDSBuffer"] == -1:
       if ldsNumElementsAB * state["ProblemType"]["DataType"].numBytes() > globalParameters["MaxLDS"]:
@@ -3701,7 +3703,7 @@ class Solution(collections.abc.Mapping):
         #reject(state, "PBC with wide load has insufficient overlap guarantees- try GRVW=1 or adding appropriate Assert*ElementMultiple")
 
 
-           
+
 
     if state["EnableMatrixInstruction"]:
       cont1 = not state["GuaranteeNoPartialB"]
