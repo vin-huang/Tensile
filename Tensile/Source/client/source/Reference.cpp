@@ -138,14 +138,13 @@ namespace Tensile
 
             using LMultT = std::conditional_t<needAccumCast, Accumulator, TypeL>;
             using RMultT = std::conditional_t<needAccumCast, Accumulator, TypeR>;
-            return static_cast<Accumulator>(static_cast<LMultT>(l) * static_cast<RMultT>(r));
-        }
 
-        template <>
-        inline float multiply<float, XFloat32, float, float>(float l, float r)
-        {
-            return static_cast<float>(static_cast<XFloat32>(l))
-                   * static_cast<float>(static_cast<XFloat32>(r));
+            constexpr bool needMathOpAccumCast = !std::is_same<Accumulator, MathOpAccum>();
+            using LMathOpMultT = std::conditional_t<needMathOpAccumCast, MathOpAccum, LMultT>;
+            using RMathOpMultT = std::conditional_t<needMathOpAccumCast, MathOpAccum, RMultT>;
+
+            return static_cast<Accumulator>(static_cast<LMultT>(static_cast<LMathOpMultT>(l))
+                                            * static_cast<RMultT>(static_cast<RMathOpMultT>(r)));
         }
 
         template <typename Inputs, typename Accumulator, typename MathOpAccum>
