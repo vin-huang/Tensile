@@ -240,4 +240,21 @@ namespace std
     {
         return static_cast<Tensile::XFloat32>(std::cos(static_cast<float>(a)));
     }
+
+    template <>
+    struct complex<Tensile::XFloat32>
+    {
+        complex<float> data;
+
+        explicit complex<Tensile::XFloat32>(complex<float> const& value)
+            : data(static_cast<float>(Tensile::XFloat32(value.real())),
+                   static_cast<float>(Tensile::XFloat32(value.imag())))
+        {
+        }
+
+        explicit operator complex<float>() const
+        {
+            return this->data;
+        }
+    };
 } // namespace std
