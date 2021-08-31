@@ -2453,6 +2453,13 @@ class Solution(collections.abc.Mapping):
   @staticmethod
   def assignDerivedParameters(state):
 
+    state["EnableF32XdlMathOp"] = False #ignore the F32 xDL MathOp by default.
+    #enable F32 xDL MathOp only when the input type is f32.
+    if "F32XdlMathOp" in state["ProblemType"] \
+       and (not state["ProblemType"]["F32XdlMathOp"].isSingle()) \
+       and (state["ProblemType"]["DataType"].isSingle() or state["ProblemType"]["DataType"].isSingleComplex()):
+      state["EnableF32XdlMathOp"] = True
+
     Solution.parameterWrapper(state)
 
     Solution.assignProblemIndependentDerivedParameters(state)
