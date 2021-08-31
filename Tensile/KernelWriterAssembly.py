@@ -1001,6 +1001,9 @@ class KernelWriterAssembly(KernelWriter):
       numberOfSgpr = self.numGlobalReadOffsetsB if needFirstSgprOffset else (self.numGlobalReadOffsetsB-1)
       self.defineSgpr("ScalarGlobalReadOffsetB", numberOfSgpr)
 
+    if kernel["EnableF32XdlMathOp"]:
+      self.defineSgpr("MacXdlF32MaskTmp", 2, 2)
+
     # debug flag to allocate dummy / unused sgpr
     # useful when comparing code that adds new kernel arguments to see what
     # was actually changed
@@ -1500,8 +1503,8 @@ class KernelWriterAssembly(KernelWriter):
       localReadWidth = tPB["bpe"] / self.bpr
     if kernel["UnrollMajorLDSB"]:
       localReadWidth = (self.lrvwB * tPB["bpe"]) // self.bpr
-    # for directToLds x2/x4 support suppot 
-    if kernel["DirectToLdsB"] and kernel["ProblemType"]["TLUB"]: 
+    # for directToLds x2/x4 support suppot
+    if kernel["DirectToLdsB"] and kernel["ProblemType"]["TLUB"]:
       localReadWidth  = 1    # for fp64 its f32
 
     #localReadStridePerpendicular = 0
@@ -1826,6 +1829,10 @@ class KernelWriterAssembly(KernelWriter):
 
     self.startVgprAddressDbg = vgprIdx
     vgprIdx += numVgprAddressDbg
+
+    if kernel["EnableF32XdlMathOp"]:
+      self.startVgprF32Xdl = vgprIdx
+      vgprIdx += 1
 
     self.startVgprSerial = vgprIdx
     vgprIdx += 1 # for vgpr serial id
@@ -2158,8 +2165,6 @@ class KernelWriterAssembly(KernelWriter):
       self.macXdlF32Mask = "0xffffffff"
       if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32():
         self.macXdlF32Mask = "0xffffc000"
-      self.macXdlMaskTmp = "\\sMask"
-      self.macXdlF32Nan = "\\vXdlNan"
 
     # pre-determine labels in order
     unrollChar = self.indexChars[ \
@@ -2333,22 +2338,22 @@ class KernelWriterAssembly(KernelWriter):
             for iui in range(0, innerUnroll):
               aStr = "v[%s+%u*2]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
               bStr = "v[%s+%u*2]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
-              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, aStr, aStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), aStr, aStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(aStr, self.macXdlF32Mask, aStr, self.endLine)
 
-              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, bStr, bStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), bStr, bStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(bStr, self.macXdlF32Mask, bStr, self.endLine)
 
               aStr = "v[%s+%u*2+1]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
               bStr = "v[%s+%u*2+1]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
-              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, aStr, aStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), aStr, aStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(aStr, self.macXdlF32Mask, aStr, self.endLine)
 
-              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, bStr, bStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), bStr, bStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(bStr, self.macXdlF32Mask, bStr, self.endLine)
 
           for iui in range(0, innerUnroll):
@@ -2458,12 +2463,8 @@ class KernelWriterAssembly(KernelWriter):
       # Create a special macro that does one K iter if needed:
       ext = "_OneIUI" if oneIUI else ""
       if useMacro:
-        if kernel["EnableF32XdlMathOp"]:
-          kStr += ".macro MAC_%ux%u_X%u%s sMask vXdlNan" \
-              % (kernel["ThreadTile0"], kernel["ThreadTile1"], m, ext)
-        else:
-          kStr += ".macro MAC_%ux%u_X%u%s" \
-              % (kernel["ThreadTile0"], kernel["ThreadTile1"], m, ext)
+        kStr += ".macro MAC_%ux%u_X%u%s" \
+            % (kernel["ThreadTile0"], kernel["ThreadTile1"], m, ext)
 
       kStr += self.endLine
 
@@ -2742,6 +2743,10 @@ class KernelWriterAssembly(KernelWriter):
     if self.numVgprLocalReadAddressesB > 0:
       kStr += self.macroRegister("vgprLocalReadAddrB", \
           self.startVgprLocalReadAddressesB)
+
+    if kernel["EnableF32XdlMathOp"]:
+      kStr += self.macroRegister("vgprMacXdlF32Nan", \
+          self.startVgprF32Xdl)
 
     # Serial is always the last register in the pool so the store
     # code doesn't have to deal with fragmentation
@@ -5220,7 +5225,7 @@ class KernelWriterAssembly(KernelWriter):
       "LSU offset: stirde = MT%u(%u) + PAD%u(%u)" % (tile01, kernel["MacroTile%u" % tile01], tile01, LdsPad))
     kStr += inst("v_mul_lo_u32", vgpr(sgid), sgpr(tmpSgpr), vgpr(sgid), \
       "LSU offset: lsuoffset = sgid*(MT%u+PAD)"%tile01)
-    if kernel["EnableMatrixInstruction"]: 
+    if kernel["EnableMatrixInstruction"]:
       if (kernel["DirectToLds%s" % tP["tensorChar"]] and \
           kernel["GlobalLoadVectorWidth%c"%tP["tensorChar"]] * tP["bpe"] > 4 and  \
           kernel["ProblemType"]["TLU%s" % tP["tensorChar"]]):
@@ -5403,6 +5408,9 @@ class KernelWriterAssembly(KernelWriter):
         kStr += inst("s_mov_b32", sgpr("PrevWorkGroup0"), sgpr("WorkGroup0"), "save for store code")
         kStr += inst("s_mov_b32", sgpr("PrevWorkGroup1"), sgpr("WorkGroup1"), "save for store code")
 
+    if kernel["EnableF32XdlMathOp"]:
+      if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32():
+        kStr += inst("v_mov_b32", vgpr("MacXdlF32Nan"), "0x7fc00000", "xf32 nan")
     return kStr
 
 
@@ -6464,29 +6472,16 @@ class KernelWriterAssembly(KernelWriter):
     if kernel["ProblemType"]["DataType"].isHalf():
       imod.addInst(".align32 8, 0xbf800001", "align v_pk_fma")   # Align v_pk_fma instructions used in MAC_ blocks
 
-    xdlParams = ""
-    if kernel["EnableF32XdlMathOp"]:
-      sMask = self.sgprPool.checkOutAligned(2, 2)
-      vXdlNan = self.vgprPool.checkOut(1)
-      if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32():
-        imod.addText("v_mov_b32 %s, 0x7fc00000%s" % (vgpr(vXdlNan), self.endLine))
-      xdlParams = "%s, %s" % (sgpr(sMask,2), vgpr(vXdlNan))
-      self.macXdlMaskTmp = "\\sMask" if useMacro else sgpr(sMask, 2)
-      self.macXdlF32Nan = "\\vXdlNan" if useMacro else vgpr(vXdlNan)
-
     if kernel["InnerUnroll"] > 1 and iuiCount==1:
       # This it tail-loop case where we just want one IUI,
-      imod.addText("MAC_%ux%u_X%u_OneIUI %s" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx, xdlParams))
+      imod.addText("MAC_%ux%u_X%u_OneIUI" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx))
     else:
       if useMacro:
-        imod.addText("MAC_%ux%u_X%u %s" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx, xdlParams))
+        imod.addText("MAC_%ux%u_X%u" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx))
       else:
         # Generate MAC calls inline
         imod.addText(self.defineMACs(kernel, bufferIdx, kernel["InnerUnroll"]))
 
-    if kernel["EnableF32XdlMathOp"]:
-      self.sgprPool.checkIn(sMask)
-      self.vgprPool.checkIn(vXdlNan)
     return imod
 
   ##############################################################################
@@ -7296,15 +7291,15 @@ class KernelWriterAssembly(KernelWriter):
                   soffset = "0"
 
                 if kernel["DirectToLds%s"%tc]:
-                  # use bpe with GlobalLoadVectorWidth 
+                  # use bpe with GlobalLoadVectorWidth
                   ldsInc = (self.kernel["WavefrontSize"] * kernel["GlobalLoadVectorWidth%c"%tc]  if kernel["WaveSeparateGlobalRead%c"%tc] else kernel["NumThreads"] * kernel["GlobalLoadVectorWidth%c"%tc]) * tP["bpe"]
                   if kernel["LdsBlockSizePerPad%s"%tc] != 0:
                     ldsInc += (ldsInc // kernel["LdsBlockSizePerPad%s"%tc]) * kernel["LdsPad%s"%tc] * tP["bpe"]
                   else:
                     padInterval = (self.kernel["WavefrontSize"] if kernel["WaveSeparateGlobalRead%c"%tc] else kernel["NumThreads"]) * self.bpr
                     ldsInc += (ldsInc // padInterval) * kernel["LdsPad%s"%tc] * tP["bpe"]
-                  #print("ldsInc", ldsInc) 
-                  #print("GlobalLoadVectorWidth", kernel["GlobalLoadVectorWidth%c"%tc]) 
+                  #print("ldsInc", ldsInc)
+                  #print("GlobalLoadVectorWidth", kernel["GlobalLoadVectorWidth%c"%tc])
                   #print("bpr", self.bpr)
                   if kernel["UseInstOffsetForGRO"]:
                     # buffer_load only support 12 bit instruction offset

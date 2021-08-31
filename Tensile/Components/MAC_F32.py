@@ -21,6 +21,7 @@
 
 from ..Component import Component, MAC
 from ..DataType import DataType
+from ..AsmUtils import vgpr, sgpr
 
 class MAC_F32_Plain(MAC):
     """
@@ -66,8 +67,8 @@ class MAC_F32_Plain(MAC):
 
         if kernel["EnableF32XdlMathOp"]:
             vars["f32MaskStr"] = writer.macXdlF32Mask
-            vars["nanStr"] = writer.macXdlF32Nan
-            vars["maskStr"] = writer.macXdlMaskTmp
+            vars["nanStr"] = vgpr("MacXdlF32Nan")
+            vars["maskStr"] = sgpr("MacXdlF32MaskTmp", 2)
 
         for idx1 in range(0, kernel["ThreadTile1"]):
             for idx0 in range(0, kernel["ThreadTile0"]):
