@@ -2153,6 +2153,14 @@ class KernelWriterAssembly(KernelWriter):
       miLatencyBuffer = 1
       self.miLatencyLeft = max(self.miLatency - miLatencyBuffer - miIssueLatency,0)
 
+    # xdl math op, for MACs macro or inline inst.
+    if kernel["EnableF32XdlMathOp"]:
+      self.macXdlF32Mask = "0xffffffff"
+      if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32():
+        self.macXdlF32Mask = "0xffffc000"
+      self.macXdlMaskTmp = "\\sMask"
+      self.macXdlF32Nan = "\\vXdlNan"
+
     # pre-determine labels in order
     unrollChar = self.indexChars[ \
         kernel["ProblemType"]["IndicesSummation"][self.unrollIdx]]
@@ -2319,20 +2327,29 @@ class KernelWriterAssembly(KernelWriter):
 
     # single precision complex
     elif kernel["ProblemType"]["DataType"].isSingleComplex():
-      f32MaskStr = "0xffffc000" if (kernel["EnableF32XdlMathOp"] and kernel["ProblemType"]["F32XdlMathOp"].isXFloat32()) else "0xffffffff"
       for b in range(0, kernel["ThreadTile1"]):
         for a in range(0, kernel["ThreadTile0"]):
           if kernel["EnableF32XdlMathOp"] :
             for iui in range(0, innerUnroll):
               aStr = "v[%s+%u*2]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
               bStr = "v[%s+%u*2]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
-              kStr += "v_and_b32 %s, %s, %s%s"%(aStr, f32MaskStr, aStr, self.endLine)
-              kStr += "v_and_b32 %s, %s, %s%s"%(bStr, f32MaskStr, bStr, self.endLine)
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, aStr, aStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_and_b32 %s, %s, %s%s"%(aStr, self.macXdlF32Mask, aStr, self.endLine)
+
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, bStr, bStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_and_b32 %s, %s, %s%s"%(bStr, self.macXdlF32Mask, bStr, self.endLine)
 
               aStr = "v[%s+%u*2+1]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
               bStr = "v[%s+%u*2+1]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
-              kStr += "v_and_b32 %s, %s, %s%s"%(aStr, f32MaskStr, aStr, self.endLine)
-              kStr += "v_and_b32 %s, %s, %s%s"%(bStr, f32MaskStr, bStr, self.endLine)
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, aStr, aStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_and_b32 %s, %s, %s%s"%(aStr, self.macXdlF32Mask, aStr, self.endLine)
+
+              kStr += "v_cmp_u_f32 %s, %s, %s%s"%(self.macXdlMaskTmp, bStr, bStr, self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, self.macXdlF32Nan, self.macXdlMaskTmp, self.endLine)
+              kStr += "v_and_b32 %s, %s, %s%s"%(bStr, self.macXdlF32Mask, bStr, self.endLine)
 
           for iui in range(0, innerUnroll):
             cStr = "v[%s+(%u+%u*%u)*2]" % ("vgprValuC", a, b, kernel["ThreadTile0"])
@@ -2441,8 +2458,13 @@ class KernelWriterAssembly(KernelWriter):
       # Create a special macro that does one K iter if needed:
       ext = "_OneIUI" if oneIUI else ""
       if useMacro:
-        kStr += ".macro MAC_%ux%u_X%u%s" \
-            % (kernel["ThreadTile0"], kernel["ThreadTile1"], m, ext)
+        if kernel["EnableF32XdlMathOp"]:
+          kStr += ".macro MAC_%ux%u_X%u%s sMask vXdlNan" \
+              % (kernel["ThreadTile0"], kernel["ThreadTile1"], m, ext)
+        else:
+          kStr += ".macro MAC_%ux%u_X%u%s" \
+              % (kernel["ThreadTile0"], kernel["ThreadTile1"], m, ext)
+
       kStr += self.endLine
 
       kStr += self.defineMACs(kernel, m, innerUnroll)
@@ -6442,16 +6464,29 @@ class KernelWriterAssembly(KernelWriter):
     if kernel["ProblemType"]["DataType"].isHalf():
       imod.addInst(".align32 8, 0xbf800001", "align v_pk_fma")   # Align v_pk_fma instructions used in MAC_ blocks
 
+    xdlParams = ""
+    if kernel["EnableF32XdlMathOp"]:
+      sMask = self.sgprPool.checkOutAligned(2, 2)
+      vXdlNan = self.vgprPool.checkOut(1)
+      if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32():
+        imod.addText("v_mov_b32 %s, 0x7fc00000%s" % (vgpr(vXdlNan), self.endLine))
+      xdlParams = "%s, %s" % (sgpr(sMask,2), vgpr(vXdlNan))
+      self.macXdlMaskTmp = "\\sMask" if useMacro else sgpr(sMask, 2)
+      self.macXdlF32Nan = "\\vXdlNan" if useMacro else vgpr(vXdlNan)
+
     if kernel["InnerUnroll"] > 1 and iuiCount==1:
       # This it tail-loop case where we just want one IUI,
-      imod.addText("MAC_%ux%u_X%u_OneIUI" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx))
+      imod.addText("MAC_%ux%u_X%u_OneIUI %s" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx, xdlParams))
     else:
       if useMacro:
-        imod.addText("MAC_%ux%u_X%u" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx))
+        imod.addText("MAC_%ux%u_X%u %s" % (kernel["ThreadTile0"],kernel["ThreadTile1"], bufferIdx, xdlParams))
       else:
         # Generate MAC calls inline
         imod.addText(self.defineMACs(kernel, bufferIdx, kernel["InnerUnroll"]))
 
+    if kernel["EnableF32XdlMathOp"]:
+      self.sgprPool.checkIn(sMask)
+      self.vgprPool.checkIn(vXdlNan)
     return imod
 
   ##############################################################################

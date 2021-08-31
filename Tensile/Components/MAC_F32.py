@@ -65,7 +65,9 @@ class MAC_F32_Plain(MAC):
         macIdx = 0
 
         if kernel["EnableF32XdlMathOp"]:
-            vars["f32MaskStr"] = "0xffffc000" if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32() else "0xffffffff"
+            vars["f32MaskStr"] = writer.macXdlF32Mask
+            vars["nanStr"] = writer.macXdlF32Nan
+            vars["maskStr"] = writer.macXdlMaskTmp
 
         for idx1 in range(0, kernel["ThreadTile1"]):
             for idx0 in range(0, kernel["ThreadTile0"]):
@@ -81,8 +83,14 @@ class MAC_F32_Plain(MAC):
                         vars["aStr"] = "v[vgprValuA_X{m}_I{iui} + {a}]".format_map(vars)
                         vars["bStr"] = "v[vgprValuB_X{m}_I{iui} + {b}]".format_map(vars)
 
+                        kStr += "v_cmp_u_f32 {maskStr}, {aStr}, {aStr}{endLine}".format_map(vars)
+                        kStr += "v_cndmask_b32 {aStr}, {aStr}, {nanStr}, {maskStr}{endLine}".format_map(vars)
                         kStr += "v_and_b32 {aStr}, {f32MaskStr}, {aStr}{endLine}".format_map(vars)
+
+                        kStr += "v_cmp_u_f32 {maskStr}, {bStr}, {bStr}{endLine}".format_map(vars)
+                        kStr += "v_cndmask_b32 {bStr}, {bStr}, {nanStr}, {maskStr}{endLine}".format_map(vars)
                         kStr += "v_and_b32 {bStr}, {f32MaskStr}, {bStr}{endLine}".format_map(vars)
+
 
                 for iui in range(0, innerUnroll):
                     vars["iui"] = iui
