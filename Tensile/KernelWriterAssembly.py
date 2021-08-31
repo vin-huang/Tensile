@@ -2319,8 +2319,21 @@ class KernelWriterAssembly(KernelWriter):
 
     # single precision complex
     elif kernel["ProblemType"]["DataType"].isSingleComplex():
+      f32MaskStr = "0xffffc000" if (kernel["EnableF32XdlMathOp"] and kernel["ProblemType"]["F32XdlMathOp"].isXFloat32()) else "0xffffffff"
       for b in range(0, kernel["ThreadTile1"]):
         for a in range(0, kernel["ThreadTile0"]):
+          if kernel["EnableF32XdlMathOp"] :
+            for iui in range(0, innerUnroll):
+              aStr = "v[%s+%u*2]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
+              bStr = "v[%s+%u*2]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
+              kStr += "v_and_b32 %s, %s, %s%s"%(aStr, f32MaskStr, aStr, self.endLine)
+              kStr += "v_and_b32 %s, %s, %s%s"%(bStr, f32MaskStr, bStr, self.endLine)
+
+              aStr = "v[%s+%u*2+1]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
+              bStr = "v[%s+%u*2+1]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
+              kStr += "v_and_b32 %s, %s, %s%s"%(aStr, f32MaskStr, aStr, self.endLine)
+              kStr += "v_and_b32 %s, %s, %s%s"%(bStr, f32MaskStr, bStr, self.endLine)
+
           for iui in range(0, innerUnroll):
             cStr = "v[%s+(%u+%u*%u)*2]" % ("vgprValuC", a, b, kernel["ThreadTile0"])
             aStr = "v[%s+%u*2]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)

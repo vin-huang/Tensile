@@ -1,5 +1,5 @@
 ################################################################################
-# Copyright 2020 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -64,13 +64,27 @@ class MAC_F32_Plain(MAC):
         priority = Component.Priority.find(writer)
         macIdx = 0
 
+        if kernel["EnableF32XdlMathOp"]:
+            vars["f32MaskStr"] = "0xffffc000" if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32() else "0xffffffff"
+
         for idx1 in range(0, kernel["ThreadTile1"]):
             for idx0 in range(0, kernel["ThreadTile0"]):
+                vars["idx0"] = idx0
+                vars["idx1"] = idx1
+                vars["a"] = idx0 if writer.tPB["tile01Idx"] else idx1
+                vars["b"] = idx1 if writer.tPB["tile01Idx"] else idx0
+
+                if kernel["EnableF32XdlMathOp"]:
+                    for iui in range(0, innerUnroll):
+                        vars["iui"] = iui
+
+                        vars["aStr"] = "v[vgprValuA_X{m}_I{iui} + {a}]".format_map(vars)
+                        vars["bStr"] = "v[vgprValuB_X{m}_I{iui} + {b}]".format_map(vars)
+
+                        kStr += "v_and_b32 {aStr}, {f32MaskStr}, {aStr}{endLine}".format_map(vars)
+                        kStr += "v_and_b32 {bStr}, {f32MaskStr}, {bStr}{endLine}".format_map(vars)
+
                 for iui in range(0, innerUnroll):
-                    vars["idx0"] = idx0
-                    vars["idx1"] = idx1
-                    vars["a"] = idx0 if writer.tPB["tile01Idx"] else idx1
-                    vars["b"] = idx1 if writer.tPB["tile01Idx"] else idx0
                     vars["iui"] = iui
 
                     vars["cStr"] = "v[vgprValuC + {idx0} + {idx1}*{ThreadTile0}]".format_map(vars)
