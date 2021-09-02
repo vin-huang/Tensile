@@ -1832,7 +1832,7 @@ class KernelWriterAssembly(KernelWriter):
 
     if kernel["EnableF32XdlMathOp"]:
       self.startVgprF32Xdl = vgprIdx
-      vgprIdx += 1
+      vgprIdx += 3
 
     self.startVgprSerial = vgprIdx
     vgprIdx += 1 # for vgpr serial id
@@ -2163,8 +2163,10 @@ class KernelWriterAssembly(KernelWriter):
     # xdl math op, for MACs macro or inline inst.
     if kernel["EnableF32XdlMathOp"]:
       self.macXdlF32Mask = "0xffffffff"
+      self.macXdlF32IBits = 0
       if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32():
         self.macXdlF32Mask = "0xffffc000"
+        self.macXdlF32IBits = 14
 
     # pre-determine labels in order
     unrollChar = self.indexChars[ \
@@ -2339,21 +2341,29 @@ class KernelWriterAssembly(KernelWriter):
               aStr = "v[%s+%u*2]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
               bStr = "v[%s+%u*2]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
               kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), aStr, aStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
+              kStr += "v_bfe_u32 %s, %s, %u, %u%s"%(vgpr("MacXdlF32Tmp"), aStr, self.macXdlF32IBits, 1, self.endLine)
+              kStr += "v_add3_u32 %s, %s, %s, %s%s"%(vgpr("MacXdlF32Tmp"), aStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Inc"), self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(aStr, self.macXdlF32Mask, aStr, self.endLine)
 
               kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), bStr, bStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
+              kStr += "v_bfe_u32 %s, %s, %u, %u%s"%(vgpr("MacXdlF32Tmp"), bStr, self.macXdlF32IBits, 1, self.endLine)
+              kStr += "v_add3_u32 %s, %s, %s, %s%s"%(vgpr("MacXdlF32Tmp"), bStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Inc"), self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(bStr, self.macXdlF32Mask, bStr, self.endLine)
 
               aStr = "v[%s+%u*2+1]" % ("vgprValuA_X%u_I%u"%(m,iui) , a)
               bStr = "v[%s+%u*2+1]" % ("vgprValuB_X%u_I%u"%(m,iui) , b)
               kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), aStr, aStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, aStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
+              kStr += "v_bfe_u32 %s, %s, %u, %u%s"%(vgpr("MacXdlF32Tmp"), aStr, self.macXdlF32IBits, 1, self.endLine)
+              kStr += "v_add3_u32 %s, %s, %s, %s%s"%(vgpr("MacXdlF32Tmp"), aStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Inc"), self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(aStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(aStr, self.macXdlF32Mask, aStr, self.endLine)
 
               kStr += "v_cmp_u_f32 %s, %s, %s%s"%(sgpr("MacXdlF32MaskTmp", 2), bStr, bStr, self.endLine)
-              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, bStr, vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
+              kStr += "v_bfe_u32 %s, %s, %u, %u%s"%(vgpr("MacXdlF32Tmp"), bStr, self.macXdlF32IBits, 1, self.endLine)
+              kStr += "v_add3_u32 %s, %s, %s, %s%s"%(vgpr("MacXdlF32Tmp"), bStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Inc"), self.endLine)
+              kStr += "v_cndmask_b32 %s, %s, %s, %s%s"%(bStr, vgpr("MacXdlF32Tmp"), vgpr("MacXdlF32Nan"), sgpr("MacXdlF32MaskTmp", 2), self.endLine)
               kStr += "v_and_b32 %s, %s, %s%s"%(bStr, self.macXdlF32Mask, bStr, self.endLine)
 
           for iui in range(0, innerUnroll):
@@ -2746,6 +2756,10 @@ class KernelWriterAssembly(KernelWriter):
 
     if kernel["EnableF32XdlMathOp"]:
       kStr += self.macroRegister("vgprMacXdlF32Nan", \
+          self.startVgprF32Xdl)
+      kStr += self.macroRegister("vgprMacXdlF32Inc", \
+          self.startVgprF32Xdl)
+      kStr += self.macroRegister("vgprMacXdlF32Tmp", \
           self.startVgprF32Xdl)
 
     # Serial is always the last register in the pool so the store
@@ -5411,6 +5425,7 @@ class KernelWriterAssembly(KernelWriter):
     if kernel["EnableF32XdlMathOp"]:
       if kernel["ProblemType"]["F32XdlMathOp"].isXFloat32():
         kStr += inst("v_mov_b32", vgpr("MacXdlF32Nan"), "0x7fc00000", "xf32 nan")
+        kStr += inst("v_mov_b32", vgpr("MacXdlF32Inc"), "0x1fff", "xf32 inc")
     return kStr
 
 
@@ -5904,6 +5919,10 @@ class KernelWriterAssembly(KernelWriter):
               loopCounter, \
               hex(endCounter), \
               "LoopCounter%s < EndCounter"%(loopChar) )
+
+      if loopChar is "L" and kernel["EnableF32XdlMathOp"]:
+        kStr += self.longBranchScc1(loopLabelEnd)
+      else:
         kStr += inst("s_cbranch_scc1 %s"%loopLabelEnd, \
             "do not enter Loop%s"%loopChar )
 
@@ -6049,8 +6068,11 @@ class KernelWriterAssembly(KernelWriter):
         kStr += inst("s_cmp_ge_u32", sgpr("OrigLoopCounter"), thresForNextSubLoop,
           "OrigLoopCounter >= %u (G2L buffer %u/%u)"%(thresForNextSubLoop, uDu, kernel["DepthULdsDivisor"]) )
 
-      kStr += inst("s_cbranch_scc0 %s"%loopLabelBegin, \
-          "restart Loop%s"%(loopChar ))
+      if loopChar is "L" and kernel["EnableF32XdlMathOp"]:
+        kStr += self.longBranchScc0(loopLabelBegin)
+      else:
+        kStr += inst("s_cbranch_scc0 %s"%loopLabelBegin, \
+            "restart Loop%s"%(loopChar ))
 
       if not tailLoop and loopIdx == self.unrollIdx:
         oddIterCode = Code.Module()

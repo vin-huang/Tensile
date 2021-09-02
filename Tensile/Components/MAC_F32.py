@@ -67,7 +67,10 @@ class MAC_F32_Plain(MAC):
 
         if kernel["EnableF32XdlMathOp"]:
             vars["f32MaskStr"] = writer.macXdlF32Mask
+            vars["f32IBitsStr"] = str(writer.macXdlF32IBits)
             vars["nanStr"] = vgpr("MacXdlF32Nan")
+            vars["incStr"] = vgpr("MacXdlF32Inc")
+            vars["tmpStr"] = vgpr("MacXdlF32Tmp")
             vars["maskStr"] = sgpr("MacXdlF32MaskTmp", 2)
 
         for idx1 in range(0, kernel["ThreadTile1"]):
@@ -85,11 +88,15 @@ class MAC_F32_Plain(MAC):
                         vars["bStr"] = "v[vgprValuB_X{m}_I{iui} + {b}]".format_map(vars)
 
                         kStr += "v_cmp_u_f32 {maskStr}, {aStr}, {aStr}{endLine}".format_map(vars)
-                        kStr += "v_cndmask_b32 {aStr}, {aStr}, {nanStr}, {maskStr}{endLine}".format_map(vars)
+                        kStr += "v_bfe_u32 {tmpStr}, {aStr}, {f32IBitsStr}, 1{endLine}".format_map(vars)
+                        kStr += "v_add3_u32 {tmpStr}, {aStr}, {tmpStr}, {incStr}{endLine}".format_map(vars)
+                        kStr += "v_cndmask_b32 {aStr}, {tmpStr}, {nanStr}, {maskStr}{endLine}".format_map(vars)
                         kStr += "v_and_b32 {aStr}, {f32MaskStr}, {aStr}{endLine}".format_map(vars)
 
                         kStr += "v_cmp_u_f32 {maskStr}, {bStr}, {bStr}{endLine}".format_map(vars)
-                        kStr += "v_cndmask_b32 {bStr}, {bStr}, {nanStr}, {maskStr}{endLine}".format_map(vars)
+                        kStr += "v_bfe_u32 {tmpStr}, {bStr}, {f32IBitsStr}, 1{endLine}".format_map(vars)
+                        kStr += "v_add3_u32 {tmpStr}, {bStr}, {tmpStr}, {incStr}{endLine}".format_map(vars)
+                        kStr += "v_cndmask_b32 {bStr}, {tmpStr}, {nanStr}, {maskStr}{endLine}".format_map(vars)
                         kStr += "v_and_b32 {bStr}, {f32MaskStr}, {bStr}{endLine}".format_map(vars)
 
 
