@@ -10437,6 +10437,11 @@ class KernelWriterAssembly(KernelWriter):
         numTmpVgpr += 1
     else:
       numTmpVgpr = 2 + 3 # GLOBAL_OFFSET_C needs 3, plus 2 tmps?
+
+    #multiply alpha need tmp vregs, double complex needs 4. (single complex needs 2)
+    if kernel["MIArchVgpr"] and applyAlpha and kernel["ProblemType"]["ComputeDataType"].isDoubleComplex():
+        numTmpVgpr = max(4, numTmpVgpr)
+
     tmpVgpr = self.vgprPool.checkOutAligned(numTmpVgpr, 2, "store tmps")
 
     isHpaBF16 = kernel["ProblemType"]["DestDataType"].isBFloat16() and kernel["ProblemType"]["HighPrecisionAccumulate"]
@@ -11148,13 +11153,9 @@ class KernelWriterAssembly(KernelWriter):
             for vi in range(0, gwvw):
               tStr = str(codeMulAlpha.items().pop(0)).replace("__placeholder__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi ))
               if kernel["ProblemType"]["ComputeDataType"].isComplex():
-                 vtmp1 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
-                 vtmp2 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
                  tStr = tStr.replace("__placeholder2__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi + kernel["MIRegPerOut"] ))
-                 tStr = tStr.replace("__placeholder_tmpvgpr__", str(vgpr(vtmp1, kernel["MIRegPerOut"])))
-                 tStr = tStr.replace("__placeholder_tmpvgpr2__", str(vgpr(vtmp2, kernel["MIRegPerOut"])))
-                 self.vgprPool.checkIn(vtmp1)
-                 self.vgprPool.checkIn(vtmp2)
+                 tStr = tStr.replace("__placeholder_tmpvgpr__", str(vgpr(tmpVgpr, kernel["MIRegPerOut"])))
+                 tStr = tStr.replace("__placeholder_tmpvgpr2__", str(vgpr(tmpVgpr+kernel["MIRegPerOut"], kernel["MIRegPerOut"])))
               kStr += tStr
 
     loadCInputCode = ""
@@ -11262,15 +11263,10 @@ class KernelWriterAssembly(KernelWriter):
             for vi in range(0, gwvw):
               tStr = str(codeMulAlpha.items().pop(0)).replace("__placeholder__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi ))
               if kernel["ProblemType"]["ComputeDataType"].isComplex():
-                 vtmp1 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
-                 vtmp2 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
                  tStr = tStr.replace("__placeholder2__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi + kernel["MIRegPerOut"] ))
-                 tStr = tStr.replace("__placeholder_tmpvgpr__", str(vgpr(vtmp1, kernel["MIRegPerOut"])))
-                 tStr = tStr.replace("__placeholder_tmpvgpr2__", str(vgpr(vtmp2, kernel["MIRegPerOut"])))
-                 self.vgprPool.checkIn(vtmp1)
-                 self.vgprPool.checkIn(vtmp2)
+                 tStr = tStr.replace("__placeholder_tmpvgpr__", str(vgpr(tmpVgpr, kernel["MIRegPerOut"])))
+                 tStr = tStr.replace("__placeholder_tmpvgpr2__", str(vgpr(tmpVgpr+kernel["MIRegPerOut"], kernel["MIRegPerOut"])))
               kStr += tStr
-
 
     ########################################
     # Atomic
