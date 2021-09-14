@@ -2377,12 +2377,12 @@ class Solution(collections.abc.Mapping):
     numBytes = state["ProblemType"]["DataType"].numBytes()
 
     # x2/x4 support for directToLds
-     
+
     # numelements_perlane = 4/numBytes
-    # TN with transposeLDS feature should work as long as state["AssertSummationElementMultiple"] % (numelements_perlane*2) = 0 
+    # TN with transposeLDS feature should work as long as state["AssertSummationElementMultiple"] % (numelements_perlane*2) = 0
     #                                                     state["AssertSummationElementMultiple"] % (numelements_perlane*4) = 0
 
-    #NT 
+    #NT
     # use only for f32 & DGEMM and TLU = 1
     #TN
     # use for all precisions with TransposeLDS=1
@@ -2399,7 +2399,7 @@ class Solution(collections.abc.Mapping):
       return False
 
     # GLVW*BPe only for precision(s) < 4 (bpe)
-    if (state["ProblemType"]["TLU%c"%tc] == True and numBytes < 4): 
+    if (state["ProblemType"]["TLU%c"%tc] == True and numBytes < 4):
       if state["GlobalLoadVectorWidth%c"%tc] * numBytes != 4:
         return False
 
@@ -3236,10 +3236,10 @@ class Solution(collections.abc.Mapping):
     if state["LocalReadVectorWidth"] == -1:
       if state["EnableMatrixInstruction"]:
         state["LocalReadVectorWidth"] = state["MIInputPerThread"]
-        # enable less than state["MIInputPerThread"] 
-        # for fp64 this means ds_read_b32 
+        # enable less than state["MIInputPerThread"]
+        # for fp64 this means ds_read_b32
         if ((state["DirectToLdsA"] and state["ProblemType"]["TLUA"]) or \
-            (state["DirectToLdsB"] and state["ProblemType"]["TLUB"])): 
+            (state["DirectToLdsB"] and state["ProblemType"]["TLUB"])):
              state["LocalReadVectorWidth"] = 1 if (state["ProblemType"]["DataType"].numBytes() >= 4) else state["LocalReadVectorWidth"]
       else:
         state["LocalReadVectorWidth"] = state["VectorWidth"]
@@ -3274,7 +3274,7 @@ class Solution(collections.abc.Mapping):
           state["LdsPadA"] = state["VectorWidth"]
         ## turn-off padding for directToLds
         if state["EnableMatrixInstruction"] and state["TransposeLDS"] and state["DirectToLdsA"]:
-          state["LdsPadA"] = 0 
+          state["LdsPadA"] = 0
       assert(state["LdsPadA"] >= 0)
     if state["LdsPadB"] == -1:
       if state["ProblemType"]["TLUB"]:
@@ -3285,7 +3285,7 @@ class Solution(collections.abc.Mapping):
         else:
           state["LdsPadB"] = state["VectorWidth"]
         if state["EnableMatrixInstruction"] and state["TransposeLDS"] and state["DirectToLdsB"]:
-          state["LdsPadB"] = 0 
+          state["LdsPadB"] = 0
       assert(state["LdsPadB"] >= 0)
 
     if (state["UnrollMajorLDSA"] or state["UnrollMajorLDSB"]) and (not state["EnableMatrixInstruction"]):
@@ -3394,7 +3394,7 @@ class Solution(collections.abc.Mapping):
 
     if state["EnableMatrixInstruction"]:
       if state["DirectToLds"] and state["1LDSBuffer"]:
-        reject(state, "1LDSBuffer must be 0 for directToLds") 
+        reject(state, "1LDSBuffer must be 0 for directToLds")
 
     if state["1LDSBuffer"] == -1:
       if ldsNumElementsAB * state["ProblemType"]["DataType"].numBytes() > globalParameters["MaxLDS"]:
@@ -3459,7 +3459,7 @@ class Solution(collections.abc.Mapping):
     state["LdsInitCVgprs"] = False
     if globalParameters["ArchCaps"][isa]["HasAccCD"] and \
          state["EnableMatrixInstruction"] and state["StorePriorityOpt"] and \
-         state["ProblemType"]["DataType"].isDouble():
+         (state["ProblemType"]["DataType"].isDouble() or state["ProblemType"]["DataType"].isDoubleComplex()):
       state["LdsInitCVgprs"] = True
 
     if state["MIArchVgpr"]:
@@ -3716,7 +3716,7 @@ class Solution(collections.abc.Mapping):
         #reject(state, "PBC with wide load has insufficient overlap guarantees- try GRVW=1 or adding appropriate Assert*ElementMultiple")
 
 
-           
+
 
     if state["EnableMatrixInstruction"]:
       cont1 = not state["GuaranteeNoPartialB"]
