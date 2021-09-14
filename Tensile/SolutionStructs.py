@@ -3467,8 +3467,8 @@ class Solution(collections.abc.Mapping):
          not state["EnableMatrixInstruction"]:
         reject(state, "MIArchVgpr requires gcn support ACC_CD bit for MatrixInstruction")
         return
-      if not (state["ProblemType"]["ComputeDataType"].isDouble() or \
-              state["ProblemType"]["ComputeDataType"].isSingle() or \
+      if not (state["ProblemType"]["ComputeDataType"].isDouble() or state["ProblemType"]["ComputeDataType"].isDoubleComplex() or\
+              state["ProblemType"]["ComputeDataType"].isSingle() or state["ProblemType"]["ComputeDataType"].isSingleComplex() or\
               (state["ProblemType"]["ComputeDataType"].isHalf() and state["ProblemType"]["HighPrecisionAccumulate"]) or \
               state["ProblemType"]["ComputeDataType"].isInt32()):
         reject(state, "MIArchVgpr now only support fp64, fp32, fp16, int8 MatrixInstruction.")

@@ -1500,8 +1500,8 @@ class KernelWriterAssembly(KernelWriter):
       localReadWidth = tPB["bpe"] / self.bpr
     if kernel["UnrollMajorLDSB"]:
       localReadWidth = (self.lrvwB * tPB["bpe"]) // self.bpr
-    # for directToLds x2/x4 support suppot 
-    if kernel["DirectToLdsB"] and kernel["ProblemType"]["TLUB"]: 
+    # for directToLds x2/x4 support suppot
+    if kernel["DirectToLdsB"] and kernel["ProblemType"]["TLUB"]:
       localReadWidth  = 1    # for fp64 its f32
 
     #localReadStridePerpendicular = 0
@@ -5185,7 +5185,7 @@ class KernelWriterAssembly(KernelWriter):
       "LSU offset: stirde = MT%u(%u) + PAD%u(%u)" % (tile01, kernel["MacroTile%u" % tile01], tile01, LdsPad))
     kStr += inst("v_mul_lo_u32", vgpr(sgid), sgpr(tmpSgpr), vgpr(sgid), \
       "LSU offset: lsuoffset = sgid*(MT%u+PAD)"%tile01)
-    if kernel["EnableMatrixInstruction"]: 
+    if kernel["EnableMatrixInstruction"]:
       if (kernel["DirectToLds%s" % tP["tensorChar"]] and \
           kernel["GlobalLoadVectorWidth%c"%tP["tensorChar"]] * tP["bpe"] > 4 and  \
           kernel["ProblemType"]["TLU%s" % tP["tensorChar"]]):
@@ -6346,13 +6346,13 @@ class KernelWriterAssembly(KernelWriter):
               ccInsts[2] = inst(v_add, vgpr(ccVgprs[2], numRegistersOut), "-"+ar, "0", "Ar=-Ar")
             (src0, src1) = (br, ar) if kernel["SourceSwap"] else (ar, br)
             imod.addInst("".join([inst for inst in ccInsts if inst is not None]) + \
-                         v_mfma + "a[%u:%u], %s, %s, a[%u:%u]"%(accStart            , accEnd,             src0, src1, accStart            , accEnd            ), "Cr += Ar*Br")
+                         v_mfma + "%s[%u:%u], %s, %s, %s[%u:%u]"%(accumRegType, accStart            , accEnd,             src0, src1, accumRegType, accStart            , accEnd            ), "Cr += Ar*Br")
             (src0, src1) = (bi, (vgpr(ccVgprs[0], numRegistersOut) if ccVgprs[0] else ai)) if kernel["SourceSwap"] else ((vgpr(ccVgprs[0], numRegistersOut) if ccVgprs[0] else ai), bi)
-            imod.addInst(v_mfma + "a[%u:%u], %s, %s, a[%u:%u]"%(accStart            , accEnd,             src0, src1, accStart            , accEnd            ), "Cr += %sAi*Bi"%("-" if ccVgprs[0] else ""))
+            imod.addInst(v_mfma + "%s[%u:%u], %s, %s, %s[%u:%u]"%(accumRegType, accStart            , accEnd,             src0, src1, accumRegType, accStart            , accEnd            ), "Cr += %sAi*Bi"%("-" if ccVgprs[0] else ""))
             (src0, src1) = (br, (vgpr(ccVgprs[1], numRegistersOut) if ccVgprs[1] else ai)) if kernel["SourceSwap"] else ((vgpr(ccVgprs[1], numRegistersOut) if ccVgprs[1] else ai), br)
-            imod.addInst(v_mfma + "a[%u:%u], %s, %s, a[%u:%u]"%(accStart+accImOffset, accEnd+accImOffset, src0, src1, accStart+accImOffset, accEnd+accImOffset), "Ci += %sAi*Br"%("-" if ccVgprs[1] else ""))
+            imod.addInst(v_mfma + "%s[%u:%u], %s, %s, %s[%u:%u]"%(accumRegType, accStart+accImOffset, accEnd+accImOffset, src0, src1, accumRegType, accStart+accImOffset, accEnd+accImOffset), "Ci += %sAi*Br"%("-" if ccVgprs[1] else ""))
             (src0, src1) = (bi, (vgpr(ccVgprs[2], numRegistersOut) if ccVgprs[2] else ar)) if kernel["SourceSwap"] else ((vgpr(ccVgprs[2], numRegistersOut) if ccVgprs[2] else ar), bi)
-            imod.addInst(v_mfma + "a[%u:%u], %s, %s, a[%u:%u]"%(accStart+accImOffset, accEnd+accImOffset, src0, src1, accStart+accImOffset, accEnd+accImOffset), "Ci += %sAr*Bi"%("-" if ccVgprs[2] else ""))
+            imod.addInst(v_mfma + "%s[%u:%u], %s, %s, %s[%u:%u]"%(accumRegType, accStart+accImOffset, accEnd+accImOffset, src0, src1, accumRegType, accStart+accImOffset, accEnd+accImOffset), "Ci += %sAr*Bi"%("-" if ccVgprs[2] else ""))
 
             for v in ccVgprs:
               if v is not None: self.vgprPool.checkIn(v)
@@ -7248,15 +7248,15 @@ class KernelWriterAssembly(KernelWriter):
                   soffset = "0"
 
                 if kernel["DirectToLds%s"%tc]:
-                  # use bpe with GlobalLoadVectorWidth 
+                  # use bpe with GlobalLoadVectorWidth
                   ldsInc = (self.kernel["WavefrontSize"] * kernel["GlobalLoadVectorWidth%c"%tc]  if kernel["WaveSeparateGlobalRead%c"%tc] else kernel["NumThreads"] * kernel["GlobalLoadVectorWidth%c"%tc]) * tP["bpe"]
                   if kernel["LdsBlockSizePerPad%s"%tc] != 0:
                     ldsInc += (ldsInc // kernel["LdsBlockSizePerPad%s"%tc]) * kernel["LdsPad%s"%tc] * tP["bpe"]
                   else:
                     padInterval = (self.kernel["WavefrontSize"] if kernel["WaveSeparateGlobalRead%c"%tc] else kernel["NumThreads"]) * self.bpr
                     ldsInc += (ldsInc // padInterval) * kernel["LdsPad%s"%tc] * tP["bpe"]
-                  #print("ldsInc", ldsInc) 
-                  #print("GlobalLoadVectorWidth", kernel["GlobalLoadVectorWidth%c"%tc]) 
+                  #print("ldsInc", ldsInc)
+                  #print("GlobalLoadVectorWidth", kernel["GlobalLoadVectorWidth%c"%tc])
                   #print("bpr", self.bpr)
                   if kernel["UseInstOffsetForGRO"]:
                     # buffer_load only support 12 bit instruction offset
@@ -11146,7 +11146,16 @@ class KernelWriterAssembly(KernelWriter):
           regsPerScalar = self.bpeCinternal//self.bpr # register per scalar
           for elementIdx in range(0, len(batchElements)):
             for vi in range(0, gwvw):
-              kStr += str(codeMulAlpha.items().pop(0)).replace("__placeholder__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi ))
+              tStr = str(codeMulAlpha.items().pop(0)).replace("__placeholder__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi ))
+              if kernel["ProblemType"]["ComputeDataType"].isComplex():
+                 vtmp1 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
+                 vtmp2 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
+                 tStr = tStr.replace("__placeholder2__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi + kernel["MIRegPerOut"] ))
+                 tStr = tStr.replace("__placeholder_tmpvgpr__", str(vgpr(vtmp1, kernel["MIRegPerOut"])))
+                 tStr = tStr.replace("__placeholder_tmpvgpr2__", str(vgpr(vtmp2, kernel["MIRegPerOut"])))
+                 self.vgprPool.checkIn(vtmp1)
+                 self.vgprPool.checkIn(vtmp2)
+              kStr += tStr
 
     loadCInputCode = ""
     for elementIdx in range(0, len(batchElements)):
@@ -11251,7 +11260,17 @@ class KernelWriterAssembly(KernelWriter):
           regsPerScalar = self.bpeCinternal//self.bpr # register per scalar
           for elementIdx in range(0, len(batchElements)):
             for vi in range(0, gwvw):
-              kStr += str(codeMulAlpha.items().pop(0)).replace("__placeholder__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi ))
+              tStr = str(codeMulAlpha.items().pop(0)).replace("__placeholder__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi ))
+              if kernel["ProblemType"]["ComputeDataType"].isComplex():
+                 vtmp1 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
+                 vtmp2 = self.vgprPool.checkOutAligned(kernel["MIRegPerOut"], kernel["MIRegPerOut"])
+                 tStr = tStr.replace("__placeholder2__", str(ss.elementSumIdx[elementIdx]*regsPerScalar + regsPerScalar*vi + kernel["MIRegPerOut"] ))
+                 tStr = tStr.replace("__placeholder_tmpvgpr__", str(vgpr(vtmp1, kernel["MIRegPerOut"])))
+                 tStr = tStr.replace("__placeholder_tmpvgpr2__", str(vgpr(vtmp2, kernel["MIRegPerOut"])))
+                 self.vgprPool.checkIn(vtmp1)
+                 self.vgprPool.checkIn(vtmp2)
+              kStr += tStr
+
 
     ########################################
     # Atomic
@@ -12242,6 +12261,9 @@ class KernelWriterAssembly(KernelWriter):
 
     acc2arch, _ = self.AccToArchMapper(kernel)
 
+    accImOffset = self.AccVgprImagNumOffset(kernel)
+    inputType = kernel["ProblemType"]["DataType"].MIOutputTypeNameAbbrev()
+
     self.codeMulAlpha = Code.Module("MulAlpha")
     self.codeMulAlpha.itemList = [None] * len(acc2arch)
     for i in range(len(acc2arch)):
@@ -12260,7 +12282,23 @@ class KernelWriterAssembly(KernelWriter):
         self.codeMulAlpha.itemList[destIdx] = Code.Inst("v_mul_lo_u32", vgpr("ValuC+__placeholder__"),
                                                        sgpr("Alpha"),
                                                        vgpr("ValuC+%u"%srcIdx), "Multiply MI out reg with alpha")
-
+      elif kernel["ProblemType"]["ComputeDataType"].isComplex():
+        mod = Code.Module("MulAlphaComplex")
+        mod.addInst("v_mul_%s"%inputType, "__placeholder_tmpvgpr__",
+                                                       sgpr("Alpha+0",kernel["MIRegPerOut"]),
+                                                       vgpr("ValuC+%u"%srcIdx,kernel["MIRegPerOut"]), "Multiply MI out reg with alpha")
+        mod.addInst("v_mul_%s"%inputType, "__placeholder_tmpvgpr2__",
+                                                       sgpr("Alpha+%u"%kernel["MIRegPerOut"],kernel["MIRegPerOut"]),
+                                                       vgpr("ValuC+%u"%srcIdx,kernel["MIRegPerOut"]), "Multiply MI out reg with alpha")
+        mod.addInst("v_fma_%s"%inputType, vgpr("ValuC+__placeholder__",kernel["MIRegPerOut"]),
+                                                       sgpr("Alpha+%u"%kernel["MIRegPerOut"],kernel["MIRegPerOut"]),
+                                                       "-%s" % vgpr("ValuC+%u"%(srcIdx + accImOffset),kernel["MIRegPerOut"]),
+                                                       "__placeholder_tmpvgpr__", "Multiply MI out reg with alpha")
+        mod.addInst("v_fma_%s"%inputType, vgpr("ValuC+__placeholder2__",kernel["MIRegPerOut"]),
+                                                       sgpr("Alpha+0",kernel["MIRegPerOut"]),
+                                                       vgpr("ValuC+%u"%(srcIdx + accImOffset), kernel["MIRegPerOut"]),
+                                                       "__placeholder_tmpvgpr2__", "Multiply MI out reg with alpha")
+        self.codeMulAlpha.itemList[destIdx] = mod
     return kStr
 
   # Perform 32-bit scalar mul and save u64 result in two SGPR
