@@ -71,7 +71,7 @@ class MAC_F32_Plain(MAC):
             vars["nanStr"] = vgpr("MacXdlF32Nan")
             vars["incStr"] = vgpr("MacXdlF32Inc")
             vars["tmpStr"] = vgpr("MacXdlF32Tmp")
-            vars["maskStr"] = sgpr("MacXdlF32MaskTmp", 2)
+            vars["maskStr"] = writer.macXdlMaskTmp
 
         for idx1 in range(0, kernel["ThreadTile1"]):
             for idx0 in range(0, kernel["ThreadTile0"]):
